@@ -60,6 +60,10 @@ During `/build`, orchestrate the agent pool:
 - Spawn workspace:prepare for ready features
 - Dispatch tasks to domain-matched agents
 - Monitor step-level progress
+- **Track timestamps:** When updating build-state.yaml:
+  - Set `started_at` when task first assigned
+  - Set `status_changed_at` on every status change
+  - Use ISO 8601 format: `2026-01-13T22:15:00Z`
 - Handle failures (retry with context, escalate after limit)
 - Apply completion policy when feature done
 - Trigger workspace:cleanup after merge/PR
