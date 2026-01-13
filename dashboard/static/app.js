@@ -333,6 +333,81 @@ function renderStatusColumn(title, tasks) {
     `;
 }
 
+// Agent View Rendering
+function renderAgentView() {
+    const container = elements.agentView;
+    container.innerHTML = '';
+
+    // Collect all agents
+    const agents = [
+        'backend-engineer',
+        'frontend-engineer',
+        'ui-ux-expert',
+        'data-engineer',
+        'automation-developer',
+        'devops'
+    ];
+
+    // Group tasks by agent
+    const tasksByAgent = {};
+    agents.forEach(a => tasksByAgent[a] = { active: [], done: [] });
+
+    state.features.forEach(feature => {
+        feature.tasks.forEach(task => {
+            const agent = task.agent;
+            if (agent && tasksByAgent[agent]) {
+                if (task.status === 'done' || task.status === 'completed') {
+                    tasksByAgent[agent].done.push({ ...task, feature: feature.name });
+                } else if (task.status !== 'queued') {
+                    tasksByAgent[agent].active.push({ ...task, feature: feature.name });
+                }
+            }
+        });
+    });
+
+    // Render columns
+    agents.forEach(agent => {
+        const data = tasksByAgent[agent];
+        const column = document.createElement('div');
+        column.className = 'agent-column';
+
+        const displayName = agent.replace('-', ' ').replace(/\b\w/g, c => c.toUpperCase());
+
+        column.innerHTML = `
+            <div class="agent-column-header">
+                <div class="font-medium">${displayName}</div>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <div class="text-xs text-gray-500 uppercase tracking-wider mb-2">Active</div>
+                    ${data.active.length > 0
+                        ? data.active.map(t => renderTaskCard(t, true)).join('')
+                        : '<div class="agent-idle">Idle</div>'
+                    }
+                </div>
+                <div>
+                    <div class="text-xs text-gray-500 uppercase tracking-wider mb-2">Done (${data.done.length})</div>
+                    <div class="space-y-1">
+                        ${data.done.slice(0, 5).map(t => renderTaskCardMini(t)).join('')}
+                        ${data.done.length > 5 ? `<div class="text-xs text-gray-500 px-2">+${data.done.length - 5} more</div>` : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+
+        container.appendChild(column);
+    });
+}
+
+function renderTaskCardMini(task) {
+    return `
+        <div class="task-card-mini">
+            <div class="truncate">${escapeHtml(task.title)}</div>
+            <div class="text-xs text-gray-500">${escapeHtml(task.feature)}</div>
+        </div>
+    `;
+}
+
 function escapeHtml(text) {
     if (!text) return '';
     const div = document.createElement('div');
