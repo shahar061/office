@@ -58,6 +58,34 @@ build:
 features: []  # Populated as features start
 ```
 
+### 5. Start Dashboard (Optional)
+
+Attempt to start the dashboard for real-time visibility:
+
+```bash
+# Check if Python available
+if command -v python3 &> /dev/null; then
+    # Run setup if needed
+    if [ ! -d "dashboard/.venv" ]; then
+        cd dashboard && ./setup.sh && cd ..
+    fi
+
+    # Start dashboard in background
+    cd dashboard
+    source .venv/bin/activate
+    python server.py &
+    DASHBOARD_PID=$!
+    cd ..
+
+    echo "Dashboard running at http://localhost:5050"
+else
+    echo "Note: Python not found. Dashboard unavailable."
+    echo "Build will continue without real-time visualization."
+fi
+```
+
+**Graceful degradation:** If dashboard fails to start, continue build without it. The dashboard is optional visibility, not a blocker.
+
 ## Main Loop
 
 ### Agent Pool
@@ -212,6 +240,17 @@ When all features complete:
 - Review merged code
 - Run full test suite
 - Deploy to staging
+```
+
+### Stop Dashboard
+
+If dashboard was started:
+
+```bash
+if [ -n "$DASHBOARD_PID" ]; then
+    kill $DASHBOARD_PID 2>/dev/null
+    echo "Dashboard stopped."
+fi
 ```
 
 ### State Update
