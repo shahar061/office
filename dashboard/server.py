@@ -13,8 +13,10 @@ import yaml
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 from flask import Flask, jsonify, send_from_directory
+from flask_sock import Sock
 
 app = Flask(__name__, static_folder='static')
+sock = Sock(app)
 
 # Configuration
 DEFAULT_PORT = 5050
@@ -172,6 +174,53 @@ def merge_task_data(tasks_yaml, build_state):
     return merged
 
 
+def broadcast_state():
+    """Send current state to all connected WebSocket clients."""
+    if not connected_clients:
+        return
+
+    state = load_state()
+    message = json.dumps({'type': 'state_update', 'data': state})
+
+    dead_clients = set()
+    for client in connected_clients:
+        try:
+            client.send(message)
+        except Exception:
+            dead_clients.add(client)
+
+    connected_clients.difference_update(dead_clients)
+
+
+@sock.route('/ws')
+def websocket(ws):
+    """WebSocket endpoint for real-time updates."""
+    connected_clients.add(ws)
+    print(f"Client connected. Total: {len(connected_clients)}")
+
+    # Send initial state
+    try:
+        state = load_state()
+        ws.send(json.dumps({'type': 'initial_state', 'data': state}))
+    except Exception as e:
+        print(f"Error sending initial state: {e}")
+
+    # Keep connection alive and handle messages
+    try:
+        while True:
+            message = ws.receive(timeout=30)
+            if message is None:
+                continue
+            # Handle ping/pong for keepalive
+            if message == 'ping':
+                ws.send('pong')
+    except Exception:
+        pass
+    finally:
+        connected_clients.discard(ws)
+        print(f"Client disconnected. Total: {len(connected_clients)}")
+
+
 @app.route('/')
 def index():
     """Serve the dashboard HTML."""
@@ -230,7 +279,20 @@ def main():
         print(f"Error: No available ports in range {args.port}-{args.port + MAX_PORT_TRIES}", file=sys.stderr)
         sys.exit(1)
 
+    # Start file watcher
+    start_file_watcher(broadcast_state)
+
     print(f"Dashboard running at http://localhost:{port}")
+
+    import signal
+    def shutdown(sig, frame):
+        print("\nShutting down...")
+        stop_file_watcher()
+        sys.exit(0)
+
+    signal.signal(signal.SIGINT, shutdown)
+    signal.signal(signal.SIGTERM, shutdown)
+
     app.run(host='127.0.0.1', port=port, debug=False)
 
 
