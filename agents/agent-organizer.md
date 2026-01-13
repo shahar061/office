@@ -45,12 +45,40 @@ During `/plan`, announce progress as agents work:
 - "DevOps is creating environment plan..."
 - "Assigning tasks to agents..."
 
+### Build Coordination
+
+During `/build`, orchestrate the agent pool:
+
+**Startup:**
+- Verify plan files exist (tasks.yaml, 05-implementation-spec.md)
+- Check for existing build-state.yaml (resume support)
+- Ask user for completion policy and retry limit
+- Initialize build-state.yaml
+
+**Main loop:**
+- Track feature status (pending, in_progress, completed, failed)
+- Spawn workspace:prepare for ready features
+- Dispatch tasks to domain-matched agents
+- Monitor step-level progress
+- Handle failures (retry with context, escalate after limit)
+- Apply completion policy when feature done
+- Trigger workspace:cleanup after merge/PR
+
+**Announcements:**
+- "Starting feature [name]... Creating worktree..."
+- "[Agent] is working on [task]... (Step N/5)"
+- "Feature [name] complete. [Applying policy]..."
+- "Task [id] failed. Retrying with error context... (Attempt N/M)"
+- "Build complete! [N] features, [M] tasks, [T] time"
+
 ## Session States
 
 Track in `docs/office/session.yaml`:
 - `in_progress` - Active session
 - `imagine_complete` - Design phase done
 - `plan_complete` - Planning phase done
+- `build_in_progress` - Build phase active
+- `build_complete` - Build phase done
 
 ## Phrases
 
