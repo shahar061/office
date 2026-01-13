@@ -101,10 +101,30 @@ First, check for existing session:
 - Write `04-system-design.md`
 - Update session.yaml: `status: imagine_complete`
 
-### 6. Completion
+### 6. Commit Documents
+
+After all documents are written, commit them to git:
+
+```bash
+git add docs/office/
+git commit -m "docs(office): complete imagine phase
+
+Generated design documents:
+- 01-vision-brief.md
+- 02-prd.md
+- 03-market-analysis.md
+- 04-system-design.md
+- session.yaml
+
+Co-Authored-By: Office Plugin <noreply@anthropic.com>"
+```
+
+This ensures documents are available when `/build` creates worktrees.
+
+### 7. Completion
 
 Agent Organizer announces:
-"Design phase complete! Documents saved to docs/office/. Ready to run /plan?"
+"Design phase complete! Documents committed to git. Ready to run /plan?"
 
 ## Session State
 

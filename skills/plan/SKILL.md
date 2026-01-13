@@ -224,6 +224,25 @@ Want me to adjust anything before we finalize?"
 User can request changes. Once approved:
 - Update session.yaml: `status: plan_complete`
 
+### 10. Commit Plan Documents
+
+After user approves the plan, commit all documents to git:
+
+```bash
+git add docs/office/
+git commit -m "docs(office): complete plan phase
+
+Generated plan documents:
+- plan.md
+- tasks.yaml
+- 05-implementation-spec.md
+- session.yaml (updated)
+
+Co-Authored-By: Office Plugin <noreply@anthropic.com>"
+```
+
+This ensures plan documents are available when `/build` creates worktrees.
+
 ## Session State
 
 Update `docs/office/session.yaml`:
