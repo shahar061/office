@@ -16,6 +16,8 @@ Called by `/build` with:
 ```yaml
 feature_id: user-auth
 worktree_path: /path/to/project/.worktrees/user-auth
+branch: feature/user-auth
+project_root: /path/to/project
 delete_branch: false  # Keep branch if PR created
 ```
 
