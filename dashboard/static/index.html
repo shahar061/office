@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Office Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen">
+    <!-- Header -->
+    <header class="bg-gray-800 border-b border-gray-700 px-6 py-4">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-6">
+                <h1 class="text-xl font-semibold">Office Dashboard</h1>
+
+                <!-- View Toggle -->
+                <div class="flex bg-gray-700 rounded-lg p-1">
+                    <button id="btn-feature-view" class="view-toggle active px-4 py-1.5 rounded-md text-sm font-medium transition-colors">
+                        By Feature
+                    </button>
+                    <button id="btn-agent-view" class="view-toggle px-4 py-1.5 rounded-md text-sm font-medium transition-colors">
+                        By Agent
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-6">
+                <!-- Progress -->
+                <div id="progress" class="text-sm text-gray-400">
+                    <span id="progress-text">Loading...</span>
+                </div>
+
+                <!-- Build Time -->
+                <div id="build-time" class="text-sm text-gray-400">
+                    <span id="elapsed-time"></span>
+                </div>
+
+                <!-- Connection Status -->
+                <div id="connection-status" class="flex items-center gap-2">
+                    <span id="status-indicator" class="w-2 h-2 rounded-full bg-yellow-500"></span>
+                    <span id="status-text" class="text-sm">Connecting...</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="p-6">
+        <!-- Empty State -->
+        <div id="empty-state" class="hidden flex flex-col items-center justify-center py-20 text-gray-500">
+            <svg class="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+            </svg>
+            <p class="text-lg">No active build</p>
+            <p class="text-sm mt-2">Run /build to start</p>
+        </div>
+
+        <!-- Feature View -->
+        <div id="feature-view" class="space-y-6">
+            <!-- Features rendered here by JS -->
+        </div>
+
+        <!-- Agent View -->
+        <div id="agent-view" class="hidden grid grid-cols-6 gap-4">
+            <!-- Agent columns rendered here by JS -->
+        </div>
+    </main>
+
+    <!-- Reconnecting Overlay -->
+    <div id="reconnect-overlay" class="hidden fixed inset-0 bg-gray-900/80 flex items-center justify-center z-50">
+        <div class="bg-gray-800 rounded-lg p-6 text-center">
+            <div class="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+            <p class="text-gray-300">Reconnecting...</p>
+            <p id="reconnect-attempt" class="text-sm text-gray-500 mt-2"></p>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
