@@ -49,6 +49,29 @@ The War Room automatically creates:
 - `docs/office/plan.md` - Human-readable implementation plan
 - `docs/office/tasks.yaml` - Machine-readable task manifest
 
+### /build - Build Phase
+
+After planning is complete:
+
+```
+/build
+```
+
+Configure at startup:
+- **Completion policy:** auto-merge | pr | checkpoint
+- **Retry limit:** default 3
+
+The build phase:
+1. Creates isolated worktrees per feature
+2. Agents pick tasks from queue (domain-matched)
+3. Each task follows TDD steps from implementation spec
+4. Applies completion policy when feature done
+5. Tracks progress in `docs/office/build-state.yaml`
+
+Produces:
+- Working code in feature branches
+- Merged features or pull requests (based on policy)
+
 ## The Team
 
 | Agent | Role |
@@ -66,6 +89,8 @@ The War Room automatically creates:
 | UI/UX Expert | User experience |
 | Data Engineer | Data architecture |
 | Automation Developer | Testing and CI/CD |
+
+*During /build, Backend Engineer, Frontend Engineer, UI/UX Expert, Data Engineer, Automation Developer, and DevOps execute tasks in their domains.*
 
 ## Features
 
