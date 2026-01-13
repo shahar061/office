@@ -5,9 +5,13 @@ import argparse
 import json
 import os
 import sys
+import threading
+import time
 from pathlib import Path
 
 import yaml
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler
 from flask import Flask, jsonify, send_from_directory
 
 app = Flask(__name__, static_folder='static')
@@ -20,6 +24,58 @@ WATCH_FILES = ['build-state.yaml', 'tasks.yaml']
 # Global state
 office_dir = None
 connected_clients = set()
+
+
+class FileChangeHandler(FileSystemEventHandler):
+    """Handle file changes and notify connected clients."""
+
+    def __init__(self, callback):
+        self.callback = callback
+        self._last_modified = {}
+        self._debounce_seconds = 0.5
+
+    def on_modified(self, event):
+        if event.is_directory:
+            return
+
+        filename = os.path.basename(event.src_path)
+        if filename not in WATCH_FILES:
+            return
+
+        # Debounce rapid changes
+        now = time.time()
+        last = self._last_modified.get(event.src_path, 0)
+        if now - last < self._debounce_seconds:
+            return
+        self._last_modified[event.src_path] = now
+
+        print(f"File changed: {filename}")
+        self.callback()
+
+
+# File watcher
+observer = None
+
+
+def start_file_watcher(callback):
+    """Start watching office directory for changes."""
+    global observer
+    if not office_dir:
+        return
+
+    handler = FileChangeHandler(callback)
+    observer = Observer()
+    observer.schedule(handler, str(office_dir), recursive=False)
+    observer.start()
+    print(f"Watching for changes in {office_dir}")
+
+
+def stop_file_watcher():
+    """Stop the file watcher."""
+    global observer
+    if observer:
+        observer.stop()
+        observer.join()
 
 
 def find_office_dir():
