@@ -1,0 +1,138 @@
+/* View Toggle */
+.view-toggle {
+    color: #9ca3af;
+}
+
+.view-toggle:hover {
+    color: #e5e7eb;
+}
+
+.view-toggle.active {
+    background-color: #3b82f6;
+    color: white;
+}
+
+/* Task Cards */
+.task-card {
+    @apply bg-gray-800 rounded-lg p-4 border-l-4 transition-all;
+}
+
+.task-card.status-queued {
+    @apply border-gray-500;
+}
+
+.task-card.status-assigned {
+    @apply border-blue-400;
+}
+
+.task-card.status-in_progress {
+    @apply border-yellow-400;
+}
+
+.task-card.status-review {
+    @apply border-purple-400;
+}
+
+.task-card.status-done,
+.task-card.status-completed {
+    @apply border-green-500;
+}
+
+.task-card.status-failed {
+    @apply border-red-500;
+}
+
+/* Stuck Animation */
+.task-card.stuck {
+    animation: pulse-border 2s infinite;
+}
+
+@keyframes pulse-border {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.4);
+    }
+    50% {
+        box-shadow: 0 0 0 4px rgba(234, 179, 8, 0.2);
+    }
+}
+
+/* Feature Lane */
+.feature-lane {
+    @apply bg-gray-800/50 rounded-lg p-4;
+}
+
+.feature-lane-header {
+    @apply flex items-center justify-between mb-4 pb-3 border-b border-gray-700;
+}
+
+/* Status Columns */
+.status-column {
+    @apply flex-1 min-w-0;
+}
+
+.status-column-header {
+    @apply text-xs font-medium text-gray-500 uppercase tracking-wider mb-3 px-2;
+}
+
+/* Agent Column */
+.agent-column {
+    @apply bg-gray-800/50 rounded-lg p-4;
+}
+
+.agent-column-header {
+    @apply text-sm font-medium text-gray-300 mb-4 pb-2 border-b border-gray-700;
+}
+
+.agent-idle {
+    @apply text-gray-500 text-sm italic py-4 text-center;
+}
+
+/* Mini Card (for done tasks in agent view) */
+.task-card-mini {
+    @apply bg-gray-700/50 rounded px-3 py-2 text-sm;
+}
+
+/* Retry Badge */
+.retry-badge {
+    @apply text-xs px-2 py-0.5 rounded-full;
+}
+
+.retry-badge.warning {
+    @apply bg-yellow-500/20 text-yellow-400;
+}
+
+.retry-badge.danger {
+    @apply bg-red-500/20 text-red-400;
+}
+
+/* Dependency Links */
+.dep-link {
+    @apply text-xs text-gray-500;
+}
+
+.dep-link:hover {
+    @apply text-gray-300;
+}
+
+/* Scrollable areas */
+.tasks-scroll {
+    @apply flex gap-2 overflow-x-auto pb-2;
+}
+
+/* Tooltip */
+.tooltip {
+    @apply invisible opacity-0 absolute z-10 bg-gray-700 text-gray-200 text-xs rounded px-2 py-1 -top-8 left-1/2 -translate-x-1/2 transition-all whitespace-nowrap;
+}
+
+.has-tooltip:hover .tooltip {
+    @apply visible opacity-100;
+}
+
+/* Error expandable */
+.error-message {
+    @apply mt-2 text-xs text-red-400 bg-red-500/10 rounded p-2 hidden;
+}
+
+.error-message.expanded {
+    @apply block;
+}
