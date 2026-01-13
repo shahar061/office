@@ -105,7 +105,64 @@ Agent Organizer asks user to resolve before proceeding.
   - Execution order: user-auth → [settings, api-layer] → dashboard → admin
 ```
 
-### 7. Output Generation
+### 7. Implementation Spec Generation
+
+Team Lead generates detailed implementation spec with TDD steps.
+
+**Output file:** `docs/office/05-implementation-spec.md`
+
+**Format for each task:**
+
+```markdown
+### Task [id]: [title]
+
+**Files:**
+- Create: `exact/path/to/file.py`
+- Modify: `exact/path/to/existing.py:123-145`
+- Test: `tests/exact/path/to/test.py`
+
+**Step 1: Write failing test**
+
+\`\`\`python
+def test_specific_behavior():
+    result = function(input)
+    assert result == expected
+\`\`\`
+
+**Step 2: Run test to verify failure**
+
+Run: `pytest tests/path/test.py::test_name -v`
+Expected: FAIL with "function not defined"
+
+**Step 3: Write minimal implementation**
+
+\`\`\`python
+def function(input):
+    return expected
+\`\`\`
+
+**Step 4: Run test to verify pass**
+
+Run: `pytest tests/path/test.py::test_name -v`
+Expected: PASS
+
+**Step 5: Commit**
+
+\`\`\`bash
+git add tests/path/test.py src/path/file.py
+git commit -m "feat: add specific feature"
+\`\`\`
+```
+
+**Principles:**
+- DRY, KISS, YAGNI - no over-engineering
+- TDD - test first, always
+- Atomic commits - one task, one commit
+- Exact paths - no ambiguity
+- Complete code - never "add validation logic here"
+- Each step is 2-5 minutes of work
+
+### 8. Output Generation
 
 Produce two files:
 
@@ -153,7 +210,7 @@ Key structure:
 - Task-level `depends_on` controls order within feature
 - Each feature maps to one branch and one worktree
 
-### 8. User Review
+### 9. User Review
 
 Agent Organizer presents output:
 "Implementation plan complete. Please review plan.md and tasks.yaml.
@@ -189,6 +246,7 @@ docs/
   office/
     plan.md
     tasks.yaml
+    05-implementation-spec.md
     session.yaml (updated)
 ```
 
