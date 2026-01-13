@@ -272,5 +272,73 @@ function render() {
     }
 }
 
+// Feature View Rendering
+function renderFeatureView() {
+    const container = elements.featureView;
+    container.innerHTML = '';
+
+    const statuses = ['queued', 'assigned', 'in_progress', 'review', 'done', 'completed', 'failed'];
+
+    state.features.forEach(feature => {
+        const lane = document.createElement('div');
+        lane.className = 'feature-lane';
+
+        // Count tasks by status
+        const taskCounts = {};
+        statuses.forEach(s => taskCounts[s] = 0);
+        feature.tasks.forEach(t => {
+            const status = t.status || 'queued';
+            taskCounts[status] = (taskCounts[status] || 0) + 1;
+        });
+
+        const doneCount = (taskCounts.done || 0) + (taskCounts.completed || 0);
+        const totalCount = feature.tasks.length;
+
+        // Header
+        lane.innerHTML = `
+            <div class="feature-lane-header">
+                <div class="flex items-center gap-3">
+                    <span class="text-sm font-medium">${escapeHtml(feature.name)}</span>
+                    <span class="text-xs px-2 py-0.5 rounded-full bg-gray-700 text-gray-400">${feature.id}</span>
+                    ${feature.status === 'in_progress' ? '<span class="text-xs text-yellow-400">In Progress</span>' : ''}
+                    ${feature.status === 'completed' ? '<span class="text-xs text-green-400">Completed</span>' : ''}
+                </div>
+                <span class="text-sm text-gray-500">${doneCount}/${totalCount} done</span>
+            </div>
+            <div class="grid grid-cols-5 gap-4">
+                ${renderStatusColumn('Queued', feature.tasks.filter(t => t.status === 'queued' || !t.status))}
+                ${renderStatusColumn('Active', feature.tasks.filter(t => t.status === 'assigned' || t.status === 'in_progress'))}
+                ${renderStatusColumn('Review', feature.tasks.filter(t => t.status === 'review'))}
+                ${renderStatusColumn('Done', feature.tasks.filter(t => t.status === 'done' || t.status === 'completed'))}
+                ${renderStatusColumn('Failed', feature.tasks.filter(t => t.status === 'failed'))}
+            </div>
+        `;
+
+        container.appendChild(lane);
+    });
+}
+
+function renderStatusColumn(title, tasks) {
+    const tasksHtml = tasks.length > 0
+        ? tasks.map(t => renderTaskCard(t)).join('')
+        : '<div class="text-xs text-gray-600 italic px-2">No tasks</div>';
+
+    return `
+        <div class="status-column">
+            <div class="status-column-header">${title} (${tasks.length})</div>
+            <div class="space-y-2">
+                ${tasksHtml}
+            </div>
+        </div>
+    `;
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 // Start the app
 document.addEventListener('DOMContentLoaded', init);
