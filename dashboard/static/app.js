@@ -408,6 +408,112 @@ function renderTaskCardMini(task) {
     `;
 }
 
+// Task Card Rendering
+function renderTaskCard(task, showFeature = false) {
+    const stuck = isTaskStuck(task);
+    const stuckClass = stuck ? 'stuck' : '';
+    const timeInState = formatTimeInState(task);
+
+    // Retry badge
+    let retryBadge = '';
+    if (task.retry_count > 0) {
+        const badgeClass = task.retry_count > 2 ? 'danger' : 'warning';
+        retryBadge = `<span class="retry-badge ${badgeClass}">Retry: ${task.retry_count}</span>`;
+    }
+
+    // Dependencies
+    let depsHtml = '';
+    if (task.depends_on && task.depends_on.length > 0) {
+        const blockedBy = task.depends_on.filter(depId => {
+            // Find if dependency is not done
+            for (const f of state.features) {
+                const depTask = f.tasks.find(t => t.id === depId);
+                if (depTask && depTask.status !== 'done' && depTask.status !== 'completed') {
+                    return true;
+                }
+            }
+            return false;
+        });
+
+        if (blockedBy.length > 0) {
+            depsHtml = `<div class="dep-link mt-2">Blocked by: ${blockedBy.join(', ')}</div>`;
+        }
+    }
+
+    // Find tasks blocking this one
+    const blocking = [];
+    state.features.forEach(f => {
+        f.tasks.forEach(t => {
+            if (t.depends_on && t.depends_on.includes(task.id)) {
+                if (t.status !== 'done' && t.status !== 'completed') {
+                    blocking.push(t.id);
+                }
+            }
+        });
+    });
+
+    if (blocking.length > 0) {
+        depsHtml += `<div class="dep-link">Blocking: ${blocking.join(', ')}</div>`;
+    }
+
+    // Error message
+    let errorHtml = '';
+    if (task.error) {
+        const errorId = `error-${task.id}`;
+        errorHtml = `
+            <button class="text-xs text-red-400 hover:text-red-300 mt-2" onclick="toggleError('${errorId}')">
+                Show error
+            </button>
+            <div id="${errorId}" class="error-message">${escapeHtml(task.error)}</div>
+        `;
+    }
+
+    // Feature tag (for agent view)
+    const featureTag = showFeature && task.feature
+        ? `<span class="text-xs px-2 py-0.5 rounded bg-gray-700 text-gray-400">${escapeHtml(task.feature)}</span>`
+        : '';
+
+    // Current step
+    let stepInfo = '';
+    if (task.current_step && task.status === 'in_progress') {
+        stepInfo = `<div class="text-xs text-gray-500 mt-1">Step ${task.current_step}/5</div>`;
+    }
+
+    return `
+        <div class="task-card status-${task.status || 'queued'} ${stuckClass}">
+            <div class="flex items-start justify-between gap-2">
+                <div class="flex-1 min-w-0">
+                    ${featureTag}
+                    <div class="font-medium text-sm mt-1">${escapeHtml(task.id)}</div>
+                    <div class="text-sm text-gray-300 mt-0.5">${escapeHtml(task.title)}</div>
+                </div>
+                ${retryBadge}
+            </div>
+
+            <div class="flex items-center justify-between mt-3 text-xs text-gray-500">
+                <div class="flex items-center gap-2">
+                    ${task.agent ? `<span>Agent: ${task.agent}</span>` : ''}
+                </div>
+                ${timeInState ? `<span class="has-tooltip relative">
+                    ${timeInState} in state
+                    ${stuck ? '<span class="tooltip">Task may be stuck</span>' : ''}
+                </span>` : ''}
+            </div>
+
+            ${stepInfo}
+            ${depsHtml}
+            ${errorHtml}
+        </div>
+    `;
+}
+
+function toggleError(id) {
+    const el = document.getElementById(id);
+    if (el) {
+        el.classList.toggle('expanded');
+    }
+}
+
 function escapeHtml(text) {
     if (!text) return '';
     const div = document.createElement('div');
