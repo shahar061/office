@@ -254,5 +254,3 @@ docs/
 
 After `/plan` completes, Agent Organizer offers:
 "Plan finalized! When you're ready, /build will execute the tasks."
-
-(Note: /build is a future skill)
