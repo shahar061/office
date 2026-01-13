@@ -80,10 +80,41 @@ Produce two files:
 - Risk mitigation
 
 **`tasks.yaml`** (machine-readable):
-- Structured task definitions
-- Agent assignments
-- Dependencies
-- Acceptance criteria
+
+```yaml
+features:
+  - id: user-auth
+    name: User Authentication
+    branch: feature/user-auth
+    depends_on: []  # Feature-level dependencies
+    tasks:
+      - id: auth-1
+        title: Create user model
+        agent: backend-engineer
+        depends_on: []  # Task-level dependencies within feature
+        acceptance_criteria:
+          - User model with required fields
+          - Migration runs successfully
+      - id: auth-2
+        title: Build login API
+        agent: backend-engineer
+        depends_on: [auth-1]
+
+  - id: dashboard
+    name: Dashboard
+    branch: feature/dashboard
+    depends_on: [user-auth]  # Waits for user-auth to merge
+    tasks:
+      - id: dash-1
+        title: Create dashboard layout
+        agent: frontend-engineer
+```
+
+Key structure:
+- Tasks grouped under features
+- Feature-level `depends_on` controls parallel execution
+- Task-level `depends_on` controls order within feature
+- Each feature maps to one branch and one worktree
 
 ### 7. User Review
 
