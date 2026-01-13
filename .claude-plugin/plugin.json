@@ -1,0 +1,10 @@
+{
+  "name": "office",
+  "version": "0.1.0",
+  "description": "A virtual startup team of 13 AI agents that transform rough ideas into executable plans",
+  "author": {
+    "name": "Shahar Cohen"
+  },
+  "license": "MIT",
+  "keywords": ["agents", "startup", "planning", "product", "architecture"]
+}
