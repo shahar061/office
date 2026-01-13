@@ -68,7 +68,44 @@ Agent Organizer:
 - Validates dependency graph
 - Produces final tasks.yaml
 
-### 6. Output Generation
+### 6. Dependency Validation
+
+Agent Organizer validates the dependency graph:
+
+**Checks performed:**
+1. No cycles in feature dependencies
+2. No cycles in task dependencies (within each feature)
+3. All referenced dependencies exist
+4. No self-dependencies
+
+**Algorithm:**
+```
+For each dependency level (features, then tasks):
+  Build directed graph: node → depends_on nodes
+  Run topological sort
+  If cycle detected → Error with cycle path
+```
+
+**On validation failure:**
+
+```
+❌ Dependency cycle detected in features:
+   dashboard → user-auth → settings → dashboard
+
+Please restructure to break the cycle.
+```
+
+Agent Organizer asks user to resolve before proceeding.
+
+**On validation success:**
+
+```
+✓ Dependency graph validated
+  - 5 features, 0 cycles
+  - Execution order: user-auth → [settings, api-layer] → dashboard → admin
+```
+
+### 7. Output Generation
 
 Produce two files:
 
@@ -116,7 +153,7 @@ Key structure:
 - Task-level `depends_on` controls order within feature
 - Each feature maps to one branch and one worktree
 
-### 7. User Review
+### 8. User Review
 
 Agent Organizer presents output:
 "Implementation plan complete. Please review plan.md and tasks.yaml.
