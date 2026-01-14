@@ -2,6 +2,8 @@
 
 A Claude Code plugin that simulates a 13-agent startup team to transform rough ideas into executable implementation plans.
 
+See the [complete workflow diagram](docs/workflow-diagram.md) for a visual overview of the entire process.
+
 ## Installation
 
 ```bash
@@ -65,8 +67,9 @@ The build phase:
 1. Creates isolated worktrees per feature
 2. Agents pick tasks from queue (domain-matched)
 3. Each task follows TDD steps from implementation spec
-4. Applies completion policy when feature done
-5. Tracks progress in `docs/office/build-state.yaml`
+4. Code review after each task (max 3 review cycles)
+5. Applies completion policy when feature done
+6. Tracks progress in `docs/office/build-state.yaml`
 
 Produces:
 - Working code in feature branches
@@ -98,6 +101,8 @@ Produces:
 - **Boardroom Consultations** - Specialists provide input when needed
 - **Collaborative Checkpoints** - Confirm understanding at each phase
 - **Dual Output Format** - Human-readable plans + machine-readable tasks
+- **Code Review Integration** - Automated review after each task with feedback handling
+- **Real-time Dashboard** - Kanban board showing task progress at http://localhost:5050
 
 ## License
 
