@@ -2,7 +2,7 @@
 
 All notable changes to the Office plugin will be documented in this file.
 
-## [0.2.12] - 2026-01-14
+## [0.2.15] - 2026-01-14
 
 ### Changed
 
@@ -12,6 +12,24 @@ All notable changes to the Office plugin will be documented in this file.
   - Clearer step-by-step instructions with explicit Task tool invocation examples
   - Removed "Failure Modes" section and "STOP. Do not continue." blocks
   - Reference sections moved to bottom for cleaner primary instructions
+
+## [0.2.14] - 2026-01-14
+
+### Fixed
+
+- **Imagine skill made self-contained for external plugin use**: Ensured the skill works independently without requiring parent context
+
+## [0.2.13] - 2026-01-14
+
+### Fixed
+
+- **Agent definitions missing tools key**: Added explicit `tools` key and verification steps to agent configurations
+
+## [0.2.12] - 2026-01-14
+
+### Changed
+
+- **Imagine skill rewritten as minimal orchestrator**: Restructured to one-action-per-invocation pattern with explicit state machine
 
 ## [0.2.11] - 2026-01-14
 
