@@ -2,6 +2,17 @@
 
 All notable changes to the Office plugin will be documented in this file.
 
+## [0.2.17] - 2026-01-14
+
+### Changed
+
+- **Immersive role-play for /imagine**: Rewrote the command as a direct role-play experience
+  - Users now talk TO characters (CEO, PM, Market Researcher, Architect) instead of through a routing system
+  - No more "launching agent" messages or meta-commentary
+  - One continuous conversation that flows through all 4 phases
+  - Each character has a warm, direct introduction
+  - CEO and PM engage in dialogue; Market Researcher and Architect work independently after brief intros
+
 ## [0.2.15] - 2026-01-14
 
 ### Changed
