@@ -3,28 +3,13 @@ name: imagine
 description: "Use when a user wants to develop a rough idea into a product design. Activates a virtual startup team that guides the user through Discovery, Definition, Validation, and Architecture phases. Creates session.yaml and four design documents."
 ---
 
-# /imagine - Transform Ideas into Designs
+# /imagine
 
-## Overview
+## Step 1: Spawn Agent Organizer for Session Setup
 
-The `/imagine` skill activates your virtual startup team to transform a rough idea into comprehensive design documents through collaborative dialogue.
+**Do this FIRST, before any dialogue or user interaction.**
 
-## Phases
-
-| Phase | Lead Agent | Output |
-|-------|------------|--------|
-| Discovery | CEO | `01-vision-brief.md` |
-| Definition | Product Manager | `02-prd.md` |
-| Validation | Market Researcher | `03-market-analysis.md` |
-| Architecture | Chief Architect | `04-system-design.md` |
-
-## Invocation Protocol
-
-**CRITICAL: Follow these steps exactly. Do not skip to dialogue.**
-
-### Step 1: Session Setup (Required)
-
-Before any user interaction, use the Task tool to spawn the Agent Organizer for session management:
+Use the Task tool now:
 
 ```
 Task tool:
@@ -32,8 +17,8 @@ Task tool:
   prompt: |
     Set up the /imagine session.
 
-    1. Create docs/office/ directory if it doesn't exist (use Bash: mkdir -p docs/office)
-    2. Check if docs/office/session.yaml exists (use Bash: ls docs/office/session.yaml)
+    1. Run: mkdir -p docs/office
+    2. Check if docs/office/session.yaml exists
     3. If exists: Read it and return its status
     4. If not exists: Use the Write tool to create docs/office/session.yaml with:
 
@@ -48,51 +33,41 @@ Task tool:
       core_problem: ""
       key_decisions: []
 
-    You MUST use tools (Bash, Write) to create files. Do not just describe what to do.
-
+    You MUST use Bash and Write tools. Do not just describe what to do.
     Return JSON: {"session_status": "new|resuming|complete", "current_phase": "...", "topic": "..."}
 ```
 
-### Step 2: Route Based on Status
+## Step 2: Route Based on Agent Organizer Response
 
-After Agent Organizer returns:
+After the Agent Organizer task completes:
 
-- **"new"** → Proceed to Step 3 (Discovery Phase)
-- **"resuming"** → Spawn the agent for `current_phase` (CEO, Product Manager, etc.)
+- **"new"** → Go to Step 3
+- **"resuming"** → Spawn the agent for the returned `current_phase`
 - **"complete"** → Tell user: "Design phase complete. Run /plan to continue."
 
-### Step 3: Spawn Phase Agents
+## Step 3: Spawn CEO for Discovery Phase
 
-Only after session.yaml exists, spawn the phase agent. Example for Discovery:
+Use the Task tool:
 
 ```
 Task tool:
   subagent_type: office:ceo
   prompt: |
-    Lead the Discovery phase dialogue for /imagine.
+    Lead the Discovery phase for /imagine.
 
-    Engage the user to understand their idea deeply:
-    - Understand the core problem being solved
+    Your job: Understand the user's idea through dialogue.
+    - Ask about the problem being solved
     - Identify target users
     - Explore the vision
-    - Ask one question at a time
+    - Ask ONE question at a time
 
-    When you have enough understanding, use the Write tool to create
-    docs/office/01-vision-brief.md with the vision brief.
-
-    End by confirming the vision brief content with the user.
+    When ready, use the Write tool to create docs/office/01-vision-brief.md.
+    Confirm the content with the user before finishing.
 ```
 
-## Workflow
+## Step 4: Phase Transitions
 
-### Phase Transitions
-
-Each phase follows the same pattern:
-
-1. **Phase agent dialogue** - Agent engages user, writes output document
-2. **Agent Organizer checkpoint** - Spawned to update session.yaml and transition
-
-Between phases, spawn Agent Organizer for the checkpoint:
+After each phase completes, spawn Agent Organizer for the checkpoint:
 
 ```
 Task tool:
@@ -100,88 +75,28 @@ Task tool:
   prompt: |
     Checkpoint: [Current Phase] → [Next Phase] transition.
 
-    1. Verify docs/office/[document].md exists
-    2. Use the Edit tool to update docs/office/session.yaml:
-       - Set current_phase to "[next_phase]"
-       - Add "[current_phase]" to completed_phases array
-       - Update the "updated" timestamp
+    1. Verify docs/office/[document].md was created
+    2. Use Edit tool to update docs/office/session.yaml:
+       - current_phase: "[next_phase]"
+       - Add "[completed_phase]" to completed_phases
+       - Update "updated" timestamp
     3. Return confirmation
 
-    You MUST use the Edit tool to update session.yaml. Do not just describe the changes.
+    You MUST use the Edit tool. Do not just describe changes.
 ```
 
-### Discovery Phase (CEO)
+Then spawn the next phase agent:
 
-**CEO leads dialogue with user:**
-- Understand the core problem
-- Identify target users
-- Explore the vision
-- Ask one question at a time
+| Completed Phase | Next Agent | Next Phase |
+|-----------------|------------|------------|
+| discovery | office:product-manager | definition |
+| definition | office:market-researcher | validation |
+| validation | office:chief-architect | architecture |
 
-**Boardroom consultations** (visible to user):
-- Consult Market Researcher for market validation
-- Consult UI/UX Expert for user experience questions
-- Consult Chief Architect for feasibility checks
+## Step 5: After Architecture Phase
 
-**Checkpoint (Agent Organizer):**
-- Summarize the vision
-- Ask user to confirm
-- Write `01-vision-brief.md`
-- Update session.yaml: `current_phase: definition`
-
-### 3. Definition Phase (Product Manager)
-
-**Product Manager leads dialogue:**
-- Review Vision Brief
-- Define user personas
-- Write user stories
-- Prioritize features
-
-**Boardroom consultations:**
-- Consult UI/UX Expert for user flows
-
-**Checkpoint (Agent Organizer):**
-- Summarize requirements
-- Ask user to confirm
-- Write `02-prd.md`
-- Update session.yaml: `current_phase: validation`
-
-### 4. Validation Phase (Market Researcher)
-
-**Market Researcher works (less interactive):**
-- Use WebSearch for market data
-- Label sources: `[Live Data]` vs `[Knowledge Base]`
-- Analyze competitors
-- Recommend USP
-
-**Checkpoint (Agent Organizer):**
-- Present findings
-- Ask if PRD needs adjustment
-- Write `03-market-analysis.md`
-- Update session.yaml: `current_phase: architecture`
-
-### 5. Architecture Phase (Chief Architect)
-
-**Chief Architect leads dialogue:**
-- Deep-dive into technical requirements
-- Design system components
-- Recommend tech stack
-
-**Boardroom consultations:**
-- Consult Backend Engineer for API design
-- Consult Frontend Engineer for client architecture
-- Consult Data Engineer for data models
-- Consult DevOps for infrastructure
-
-**Checkpoint (Agent Organizer):**
-- Summarize design
-- Ask user to confirm
-- Write `04-system-design.md`
-- Update session.yaml: `status: imagine_complete`
-
-### 6. Commit Documents
-
-After all documents are written, commit them to git:
+1. Spawn Agent Organizer to set `status: imagine_complete`
+2. Commit all documents:
 
 ```bash
 git add docs/office/
@@ -197,16 +112,46 @@ Generated design documents:
 Co-Authored-By: Office Plugin <noreply@anthropic.com>"
 ```
 
-This ensures documents are available when `/build` creates worktrees.
+3. Tell user: "Design phase complete! Documents committed. Ready to run /plan?"
 
-### 7. Completion
+---
 
-Agent Organizer announces:
-"Design phase complete! Documents committed to git. Ready to run /plan?"
+## Reference: Phase Details
 
-## Session State
+### Discovery (CEO)
+- Understand core problem
+- Identify target users
+- Explore vision
+- Output: `01-vision-brief.md`
 
-Maintain `docs/office/session.yaml`:
+### Definition (Product Manager)
+- Review Vision Brief
+- Define personas and user stories
+- Prioritize features
+- Output: `02-prd.md`
+
+### Validation (Market Researcher)
+- Research market using WebSearch
+- Analyze competitors
+- Recommend USP
+- Output: `03-market-analysis.md`
+
+### Architecture (Chief Architect)
+- Design system components
+- Recommend tech stack
+- Consult Backend/Frontend/Data/DevOps engineers
+- Output: `04-system-design.md`
+
+## Reference: Boardroom Consultations
+
+Phase agents can consult specialists:
+1. Agent says: "Let me consult with our [Specialist]..."
+2. Spawn specialist agent for input
+3. Synthesize response and continue
+
+## Reference: Session State
+
+`docs/office/session.yaml` tracks progress:
 
 ```yaml
 created: "2026-01-13T10:30:00Z"
@@ -221,28 +166,4 @@ context:
   key_decisions: []
 ```
 
-## Agent Switching
-
-The primary agent for each phase leads the conversation. When they need specialist input:
-
-1. Agent says: "Let me consult with our [Specialist]..."
-2. Agent Organizer announces: "Consulting [Specialist]..."
-3. Specialist provides input (not direct dialogue with user)
-4. Primary agent synthesizes and continues
-
-For direct specialist Q&A (hybrid mode):
-1. Primary agent says: "I'm bringing in [Specialist] for this question..."
-2. Specialist speaks directly to user for that exchange
-3. Primary agent resumes after
-
-## Files Created
-
-```
-docs/
-  office/
-    session.yaml
-    01-vision-brief.md
-    02-prd.md
-    03-market-analysis.md
-    04-system-design.md
-```
+Status values: `in_progress` → `imagine_complete`

@@ -2,6 +2,16 @@
 
 All notable changes to the Office plugin will be documented in this file.
 
+## [0.2.11] - 2026-01-14
+
+### Fixed
+
+- **Skill still being interpreted as roleplay instead of commands**: Restructured `skills/imagine/SKILL.md` completely
+  - Removed descriptive "Overview" and "Phases" sections from top
+  - Skill now starts with "Step 1: Spawn Agent Organizer" - imperative command first
+  - All reference/descriptive content moved below a `---` separator at bottom
+  - Steps are numbered and use imperative verbs: "Use the Task tool now", "Do this FIRST"
+
 ## [0.2.10] - 2026-01-14
 
 ### Fixed
