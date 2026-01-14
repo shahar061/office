@@ -227,7 +227,7 @@ function updateElapsedTime() {
 // Utility
 function isTaskStuck(task) {
     if (!task.status_changed_at) return false;
-    if (task.status === 'done' || task.status === 'completed' || task.status === 'queued') return false;
+    if (task.status === 'done' || task.status === 'completed' || task.status === 'queued' || task.status === 'in_review') return false;
 
     const changed = new Date(task.status_changed_at);
     const now = new Date();
@@ -277,7 +277,7 @@ function renderFeatureView() {
     const container = elements.featureView;
     container.innerHTML = '';
 
-    const statuses = ['queued', 'assigned', 'in_progress', 'review', 'done', 'completed', 'failed'];
+    const statuses = ['queued', 'assigned', 'in_progress', 'in_review', 'done', 'completed', 'failed'];
 
     state.features.forEach(feature => {
         const lane = document.createElement('div');
@@ -308,7 +308,7 @@ function renderFeatureView() {
             <div class="grid grid-cols-5 gap-4">
                 ${renderStatusColumn('Queued', feature.tasks.filter(t => t.status === 'queued' || !t.status))}
                 ${renderStatusColumn('Active', feature.tasks.filter(t => t.status === 'assigned' || t.status === 'in_progress'))}
-                ${renderStatusColumn('Review', feature.tasks.filter(t => t.status === 'review'))}
+                ${renderStatusColumn('In Review', feature.tasks.filter(t => t.status === 'in_review'))}
                 ${renderStatusColumn('Done', feature.tasks.filter(t => t.status === 'done' || t.status === 'completed'))}
                 ${renderStatusColumn('Failed', feature.tasks.filter(t => t.status === 'failed'))}
             </div>
