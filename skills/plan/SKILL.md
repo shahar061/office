@@ -164,9 +164,14 @@ git commit -m "feat: add specific feature"
 
 ### 8. Output Generation
 
-Produce two files:
+Produce three files:
 
-**`plan.md`** (human-readable):
+**`05-implementation-spec.md`** (detailed TDD steps):
+- Generated in step 7 above
+- Contains exact file paths, test code, and implementation code for each task
+- This is the primary reference for `/build` agents
+
+**`plan.md`** (human-readable summary):
 - Phase overview
 - Milestones and deliverables
 - Task list per phase
