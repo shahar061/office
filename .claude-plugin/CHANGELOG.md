@@ -2,6 +2,17 @@
 
 All notable changes to the Office plugin will be documented in this file.
 
+## [0.2.12] - 2026-01-14
+
+### Changed
+
+- **Imagine skill simplified to continuous flow**: Restructured from "one action per invocation" to single-session progression through all phases
+  - Removed requirement to run `/imagine` repeatedly for each phase
+  - Agent Organizer now handles session setup inline, followed by sequential phase agents
+  - Clearer step-by-step instructions with explicit Task tool invocation examples
+  - Removed "Failure Modes" section and "STOP. Do not continue." blocks
+  - Reference sections moved to bottom for cleaner primary instructions
+
 ## [0.2.11] - 2026-01-14
 
 ### Fixed
