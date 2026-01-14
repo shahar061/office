@@ -1,6 +1,6 @@
 # Office - Your Virtual Startup Team
 
-A Claude Code plugin that simulates a 13-agent startup team to transform rough ideas into executable implementation plans.
+A Claude Code plugin that simulates a 14-agent startup team to transform rough ideas into executable implementation plans.
 
 See the [complete workflow diagram](docs/workflow-diagram.md) for a visual overview of the entire process.
 
@@ -89,11 +89,12 @@ Produces:
 | DevOps | Infrastructure planning |
 | Backend Engineer | API and data |
 | Frontend Engineer | UI and state |
+| Mobile Developer | Cross-platform mobile apps |
 | UI/UX Expert | User experience |
 | Data Engineer | Data architecture |
 | Automation Developer | Testing and CI/CD |
 
-*During /build, Backend Engineer, Frontend Engineer, UI/UX Expert, Data Engineer, Automation Developer, and DevOps execute tasks in their domains.*
+*During /build, Backend Engineer, Frontend Engineer, Mobile Developer, UI/UX Expert, Data Engineer, Automation Developer, and DevOps execute tasks in their domains.*
 
 ## Features
 
