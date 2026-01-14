@@ -105,6 +105,11 @@
     @apply bg-red-500/20 text-red-400;
 }
 
+/* Review Warning Badge */
+.review-warning-badge {
+    @apply text-xs px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-400;
+}
+
 /* Dependency Links */
 .dep-link {
     @apply text-xs text-gray-500;

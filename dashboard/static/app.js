@@ -421,6 +421,12 @@ function renderTaskCard(task, showFeature = false) {
         retryBadge = `<span class="retry-badge ${badgeClass}">Retry: ${task.retry_count}</span>`;
     }
 
+    // Review warning badge
+    let reviewWarningBadge = '';
+    if (task.review_status === 'has-warnings') {
+        reviewWarningBadge = '<span class="review-warning-badge">CR Warnings</span>';
+    }
+
     // Dependencies
     let depsHtml = '';
     if (task.depends_on && task.depends_on.length > 0) {
@@ -487,7 +493,10 @@ function renderTaskCard(task, showFeature = false) {
                     <div class="font-medium text-sm mt-1">${escapeHtml(task.id)}</div>
                     <div class="text-sm text-gray-300 mt-0.5">${escapeHtml(task.title)}</div>
                 </div>
-                ${retryBadge}
+                <div class="flex flex-col gap-1">
+                    ${retryBadge}
+                    ${reviewWarningBadge}
+                </div>
             </div>
 
             <div class="flex items-center justify-between mt-3 text-xs text-gray-500">
