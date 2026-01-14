@@ -4,6 +4,15 @@ A Claude Code plugin that simulates a 14-agent startup team to transform rough i
 
 See the [complete workflow diagram](docs/workflow-diagram.md) for a visual overview of the entire process.
 
+## Requirements
+
+This plugin depends on the [superpowers](https://github.com/anthropics/claude-code-plugins/tree/main/superpowers) plugin for git worktrees, code review, and branch management features used during `/build`.
+
+Install it first:
+```bash
+claude plugins add superpowers
+```
+
 ## Installation
 
 ```bash
