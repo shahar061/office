@@ -2,6 +2,16 @@
 
 All notable changes to the Office plugin will be documented in this file.
 
+## [0.2.10] - 2026-01-14
+
+### Fixed
+
+- **Session setup skipped in /imagine**: The skill documented the workflow but didn't prescribe explicit Task tool invocations, causing Claude to skip directly to CEO dialogue without creating session.yaml
+  - `skills/imagine/SKILL.md`: Added "Invocation Protocol" section with explicit Task tool calls for Agent Organizer before spawning phase agents
+  - `skills/imagine/SKILL.md`: Added phase transition pattern with Task tool examples
+  - `agents/agent-organizer.md`: Added "Tool Usage Requirements" section requiring Bash/Write/Edit tool usage for session setup and phase transitions
+  - `agents/agent-organizer.md`: Added "Common Failure Mode" warning about completing with 0 tool uses
+
 ## [0.2.9] - 2026-01-14
 
 ### Fixed

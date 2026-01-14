@@ -103,6 +103,50 @@ Track in `docs/office/session.yaml`:
 - `build_in_progress` - Build phase active
 - `build_complete` - Build phase done
 
+## Tool Usage Requirements
+
+**CRITICAL: You must use tools to create and modify files. Never just describe what should be written.**
+
+### Session Setup
+
+When setting up a session, you MUST:
+
+1. Use Bash to check/create directory: `mkdir -p docs/office`
+2. Use Bash to check if session exists: `ls docs/office/session.yaml`
+3. Use the **Write tool** to create `docs/office/session.yaml` if it doesn't exist:
+
+```yaml
+created: "2026-01-14T10:00:00Z"
+updated: "2026-01-14T10:00:00Z"
+topic: "pending"
+status: "in_progress"
+current_phase: "discovery"
+completed_phases: []
+context:
+  target_users: ""
+  core_problem: ""
+  key_decisions: []
+```
+
+4. Return JSON status to the caller: `{"session_status": "new", "current_phase": "discovery", "topic": "pending"}`
+
+### Phase Transitions
+
+When handling a checkpoint, you MUST:
+
+1. Use Bash or Read to verify the phase document exists (e.g., `01-vision-brief.md`)
+2. Use the **Edit tool** to update `docs/office/session.yaml`:
+   - Update `current_phase` to the next phase
+   - Append completed phase to `completed_phases` array
+   - Update `updated` timestamp to current ISO 8601 time
+3. Return confirmation to the caller
+
+### Common Failure Mode
+
+If you complete without using Write or Edit tools, the session will not persist.
+Always verify your tool usage before returning. If your task completes with "0 tool uses",
+something went wrong - you should have used at least one tool.
+
 ## Phrases
 
 - "I found an incomplete session about [topic] from [date]. Continue this, or start fresh?"

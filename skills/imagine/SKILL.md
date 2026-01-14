@@ -18,34 +18,99 @@ The `/imagine` skill activates your virtual startup team to transform a rough id
 | Validation | Market Researcher | `03-market-analysis.md` |
 | Architecture | Chief Architect | `04-system-design.md` |
 
-## Workflow
+## Invocation Protocol
 
-### 1. Session Check (Agent Organizer)
+**CRITICAL: Follow these steps exactly. Do not skip to dialogue.**
 
-**BEFORE PROCEEDING TO DISCOVERY, you MUST complete these steps:**
+### Step 1: Session Setup (Required)
 
-1. Ensure `docs/office/` directory exists (create it if needed)
-2. Check if `docs/office/session.yaml` exists:
-   - If exists and incomplete: Ask "Found incomplete session about [topic]. Continue or start fresh?"
-   - If exists and complete: Say "This project is planned. Run /plan or /imagine --new"
-   - **If not exists: Write `docs/office/session.yaml` with this content:**
+Before any user interaction, use the Task tool to spawn the Agent Organizer for session management:
 
-```yaml
-created: "[timestamp]"
-updated: "[timestamp]"
-topic: "[project-name]"
-status: "in_progress"
-current_phase: "discovery"
-completed_phases: []
-context:
-  target_users: ""
-  core_problem: ""
-  key_decisions: []
+```
+Task tool:
+  subagent_type: office:agent-organizer
+  prompt: |
+    Set up the /imagine session.
+
+    1. Create docs/office/ directory if it doesn't exist (use Bash: mkdir -p docs/office)
+    2. Check if docs/office/session.yaml exists (use Bash: ls docs/office/session.yaml)
+    3. If exists: Read it and return its status
+    4. If not exists: Use the Write tool to create docs/office/session.yaml with:
+
+    created: "[current ISO timestamp]"
+    updated: "[current ISO timestamp]"
+    topic: "pending"
+    status: "in_progress"
+    current_phase: "discovery"
+    completed_phases: []
+    context:
+      target_users: ""
+      core_problem: ""
+      key_decisions: []
+
+    You MUST use tools (Bash, Write) to create files. Do not just describe what to do.
+
+    Return JSON: {"session_status": "new|resuming|complete", "current_phase": "...", "topic": "..."}
 ```
 
-**Do not proceed to Discovery Phase until session.yaml exists.**
+### Step 2: Route Based on Status
 
-### 2. Discovery Phase (CEO)
+After Agent Organizer returns:
+
+- **"new"** → Proceed to Step 3 (Discovery Phase)
+- **"resuming"** → Spawn the agent for `current_phase` (CEO, Product Manager, etc.)
+- **"complete"** → Tell user: "Design phase complete. Run /plan to continue."
+
+### Step 3: Spawn Phase Agents
+
+Only after session.yaml exists, spawn the phase agent. Example for Discovery:
+
+```
+Task tool:
+  subagent_type: office:ceo
+  prompt: |
+    Lead the Discovery phase dialogue for /imagine.
+
+    Engage the user to understand their idea deeply:
+    - Understand the core problem being solved
+    - Identify target users
+    - Explore the vision
+    - Ask one question at a time
+
+    When you have enough understanding, use the Write tool to create
+    docs/office/01-vision-brief.md with the vision brief.
+
+    End by confirming the vision brief content with the user.
+```
+
+## Workflow
+
+### Phase Transitions
+
+Each phase follows the same pattern:
+
+1. **Phase agent dialogue** - Agent engages user, writes output document
+2. **Agent Organizer checkpoint** - Spawned to update session.yaml and transition
+
+Between phases, spawn Agent Organizer for the checkpoint:
+
+```
+Task tool:
+  subagent_type: office:agent-organizer
+  prompt: |
+    Checkpoint: [Current Phase] → [Next Phase] transition.
+
+    1. Verify docs/office/[document].md exists
+    2. Use the Edit tool to update docs/office/session.yaml:
+       - Set current_phase to "[next_phase]"
+       - Add "[current_phase]" to completed_phases array
+       - Update the "updated" timestamp
+    3. Return confirmation
+
+    You MUST use the Edit tool to update session.yaml. Do not just describe the changes.
+```
+
+### Discovery Phase (CEO)
 
 **CEO leads dialogue with user:**
 - Understand the core problem
