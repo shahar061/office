@@ -29,7 +29,7 @@
     @apply border-yellow-400;
 }
 
-.task-card.status-review {
+.task-card.status-in_review {
     @apply border-purple-400;
 }
 
