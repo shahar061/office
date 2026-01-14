@@ -27,6 +27,12 @@ You participate in the `/plan` War Room. You take the System Design and break it
 4. **Clear Criteria**: Every task has acceptance criteria
 5. **Explicit Dependencies**: What must exist before this task
 
+## Output Files
+
+You produce TWO files during `/plan`:
+1. **`tasks.yaml`** - Machine-readable task manifest
+2. **`05-implementation-spec.md`** - Detailed TDD implementation steps
+
 ## Tasks.yaml Structure
 
 Produce `tasks.yaml`:
@@ -67,6 +73,59 @@ Assign to appropriate agent:
 - **data_engineer**: Data pipelines, analytics
 - **automation_developer**: Tests, CI/CD, scripts
 - **devops**: Infrastructure, deployment
+
+## 05-implementation-spec.md Structure
+
+Produce `05-implementation-spec.md` with detailed TDD steps for each task:
+
+```markdown
+### Task [id]: [title]
+
+**Files:**
+- Create: `exact/path/to/file.py`
+- Modify: `exact/path/to/existing.py:123-145`
+- Test: `tests/exact/path/to/test.py`
+
+**Step 1: Write failing test**
+
+\`\`\`python
+def test_specific_behavior():
+    result = function(input)
+    assert result == expected
+\`\`\`
+
+**Step 2: Run test to verify failure**
+
+Run: `pytest tests/path/test.py::test_name -v`
+Expected: FAIL with "function not defined"
+
+**Step 3: Write minimal implementation**
+
+\`\`\`python
+def function(input):
+    return expected
+\`\`\`
+
+**Step 4: Run test to verify pass**
+
+Run: `pytest tests/path/test.py::test_name -v`
+Expected: PASS
+
+**Step 5: Commit**
+
+\`\`\`bash
+git add tests/path/test.py src/path/file.py
+git commit -m "feat: add specific feature"
+\`\`\`
+```
+
+**Principles:**
+- DRY, KISS, YAGNI - no over-engineering
+- TDD - test first, always
+- Atomic commits - one task, one commit
+- Exact paths - no ambiguity
+- Complete code - never "add validation logic here"
+- Each step is 2-5 minutes of work
 
 ## Phrases
 

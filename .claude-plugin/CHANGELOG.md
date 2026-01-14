@@ -2,6 +2,14 @@
 
 All notable changes to the Office plugin will be documented in this file.
 
+## [0.2.5] - 2026-01-14
+
+### Fixed
+
+- **Agent files missing file creation instructions**: Root cause of session.yaml and 05-implementation-spec.md not being created
+  - `agent-organizer.md`: Added explicit session.yaml creation template with full YAML structure
+  - `team-lead.md`: Added 05-implementation-spec.md as explicit output file with full format documentation
+
 ## [0.2.4] - 2026-01-14
 
 ### Fixed
