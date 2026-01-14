@@ -129,9 +129,21 @@ While features remain incomplete:
      - Step 4: Run test, verify pass
      - Step 5: Commit
 
+  4b. Code review (after each task):
+     - Update task status to `in_review` in build-state.yaml
+     - Invoke superpowers:requesting-code-review
+     - If review is clean:
+       - Set status to `completed`, review_status to `clean`
+     - If review has issues:
+       - Invoke office:handling-code-review to process feedback
+       - Re-request review (max 3 attempts)
+       - After 3 attempts: set status to `completed`, review_status to `has-warnings`
+     - Move to next task
+
   5. On step completion:
      - Update build-state.yaml (step-level)
-     - If step 5 done → task complete
+     - If step 5 done → proceed to code review (step 4b)
+     - If code review passes → task complete
      - If all tasks done → feature complete
 
   6. On step failure:
