@@ -2,6 +2,35 @@
 
 All notable changes to the Office plugin will be documented in this file.
 
+## [0.2.0] - 2026-01-14
+
+### Added
+
+- **Code review integration**: Automated code review after each task during `/build`
+  - New `in_review` task status visible in dashboard
+  - Invokes `superpowers:requesting-code-review` after task completion
+  - Max 3 review cycles before marking as `has-warnings`
+- **handling-code-review skill**: Processes code review feedback with technical rigor
+  - READ → UNDERSTAND → VERIFY → EVALUATE → RESPOND → IMPLEMENT pattern
+  - Escalates unclear feedback to `@office:team-lead`
+  - YAGNI checks for over-engineering suggestions
+- **Dashboard enhancements**:
+  - "In Review" column in kanban board
+  - Orange "CR Warnings" badge for tasks with review warnings
+- **Workflow diagram**: Complete visual documentation at `docs/workflow-diagram.md`
+
+### Changed
+
+- Replaced local workspace skills with superpowers equivalents:
+  - `workspace-prepare` → `superpowers:using-git-worktrees`
+  - `workspace-cleanup` → `superpowers:finishing-a-development-branch`
+- Updated `build-state.yaml` schema with `review_attempts` and `review_status` fields
+
+### Removed
+
+- `skills/workspace-prepare/` - replaced by superpowers skill
+- `skills/workspace-cleanup/` - replaced by superpowers skill
+
 ## [0.1.2] - 2026-01-14
 
 ### Fixed
