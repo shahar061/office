@@ -31,8 +31,11 @@ You lead the Architecture phase of `/imagine`. You deep-dive into the PRD and ma
 Consult during design:
 - **Backend Engineer**: API design, data storage
 - **Frontend Engineer**: Client architecture, state management
+- **Mobile Developer**: Mobile platform constraints, app store requirements (when mobile is relevant)
 - **Data Engineer**: Data models, pipelines
 - **DevOps**: Infrastructure, deployment
+
+When the project involves mobile apps, bring in the Mobile Developer to advise on platform-specific constraints that affect architecture (app store policies, offline sync, push notifications, deep linking).
 
 ## System Design Structure
 
