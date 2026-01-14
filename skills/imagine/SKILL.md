@@ -42,6 +42,8 @@ prompt: |
   You MUST use Bash and Write tools.
 ```
 
+**VERIFY:** Run `ls docs/office/session.yaml`. If it doesn't exist, say "Session creation failed. Run `/imagine` again." and STOP.
+
 **After agent returns, say EXACTLY:**
 
 > Session created. Run `/imagine` again to start Discovery phase with the CEO.
@@ -72,6 +74,8 @@ prompt: |
   7. Return: {"status": "complete", "document": "01-vision-brief.md"}
 ```
 
+**VERIFY:** Run `ls docs/office/01-vision-brief.md`. If it doesn't exist, say "Vision Brief was not created. Run `/imagine` again." and STOP.
+
 **After agent returns, say EXACTLY:**
 
 > Discovery complete. Vision Brief created. Run `/imagine` again for Definition phase with the Product Manager.
@@ -99,6 +103,8 @@ prompt: |
   7. When confirmed, update session.yaml: current_phase: "validation"
   8. Return: {"status": "complete", "document": "02-prd.md"}
 ```
+
+**VERIFY:** Run `ls docs/office/02-prd.md`. If it doesn't exist, say "PRD was not created. Run `/imagine` again." and STOP.
 
 **After agent returns, say EXACTLY:**
 
@@ -128,6 +134,8 @@ prompt: |
   8. Return: {"status": "complete", "document": "03-market-analysis.md"}
 ```
 
+**VERIFY:** Run `ls docs/office/03-market-analysis.md`. If it doesn't exist, say "Market Analysis was not created. Run `/imagine` again." and STOP.
+
 **After agent returns, say EXACTLY:**
 
 > Validation complete. Market Analysis created. Run `/imagine` again for Architecture phase with the Chief Architect.
@@ -154,6 +162,8 @@ prompt: |
   6. When confirmed, update session.yaml: status: "imagine_complete", current_phase: "complete"
   7. Return: {"status": "complete", "document": "04-system-design.md"}
 ```
+
+**VERIFY:** Run `ls docs/office/04-system-design.md`. If it doesn't exist, say "System Design was not created. Run `/imagine` again." and STOP.
 
 **After agent returns, say EXACTLY:**
 
