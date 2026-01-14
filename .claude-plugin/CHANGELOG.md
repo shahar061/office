@@ -2,6 +2,16 @@
 
 All notable changes to the Office plugin will be documented in this file.
 
+## [0.2.6] - 2026-01-14
+
+### Fixed
+
+- **Imagine phase agents not writing documents**: All four agents said "produce" but lacked explicit write instructions
+  - `ceo.md`: Changed to "**write the Vision Brief to `docs/office/01-vision-brief.md`**"
+  - `product-manager.md`: Changed to "**write the PRD to `docs/office/02-prd.md`**"
+  - `market-researcher.md`: Changed to "**Write the Market Analysis to `docs/office/03-market-analysis.md`**"
+  - `chief-architect.md`: Changed to "**Write the System Design to `docs/office/04-system-design.md`**"
+
 ## [0.2.5] - 2026-01-14
 
 ### Fixed

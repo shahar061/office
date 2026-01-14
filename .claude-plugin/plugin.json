@@ -1,6 +1,6 @@
 {
   "name": "office",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "A virtual startup team of 14 AI agents that transform rough ideas into executable plans",
   "author": {
     "name": "Shahar Cohen"

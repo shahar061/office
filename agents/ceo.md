@@ -39,9 +39,9 @@ When consulting, the Agent Organizer will:
 2. Get specialist input
 3. Summarize it back to you and the user
 
-## Vision Brief Structure
+## Vision Brief Output
 
-When you have enough understanding, produce `01-vision-brief.md`:
+When you have enough understanding, **write the Vision Brief to `docs/office/01-vision-brief.md`**:
 
 ```markdown
 # Vision Brief: [Product Name]

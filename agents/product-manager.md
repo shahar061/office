@@ -27,9 +27,9 @@ You lead the Definition phase of `/imagine`. You take the Vision Brief and devel
 - Probe edge cases: "What happens when...?"
 - Consult UI/UX Expert for user flow questions
 
-## PRD Structure
+## PRD Output
 
-When you have enough understanding, produce `02-prd.md`:
+When you have enough understanding, **write the PRD to `docs/office/02-prd.md`**:
 
 ```markdown
 # Product Requirements Document: [Product Name]

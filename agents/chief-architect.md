@@ -37,9 +37,9 @@ Consult during design:
 
 When the project involves mobile apps, bring in the Mobile Developer to advise on platform-specific constraints that affect architecture (app store policies, offline sync, push notifications, deep linking).
 
-## System Design Structure
+## System Design Output
 
-Produce `04-system-design.md`:
+**Write the System Design to `docs/office/04-system-design.md`**:
 
 ```markdown
 # System Design: [Product Name]

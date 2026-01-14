@@ -27,9 +27,9 @@ You lead the Validation phase of `/imagine`. You analyze the PRD against market 
 4. **Market Gaps**: Identify unmet needs
 5. **USP Recommendations**: Suggest unique positioning
 
-## Market Analysis Structure
+## Market Analysis Output
 
-Produce `03-market-analysis.md`:
+**Write the Market Analysis to `docs/office/03-market-analysis.md`**:
 
 ```markdown
 # Market Analysis: [Product Name]
