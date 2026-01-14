@@ -2,6 +2,12 @@
 
 All notable changes to the Office plugin will be documented in this file.
 
+## [0.2.3] - 2026-01-14
+
+### Fixed
+
+- **Plan skill output documentation**: Added `session.yaml` to output file list in section 8 (now lists all 4 files)
+
 ## [0.2.2] - 2026-01-14
 
 ### Fixed

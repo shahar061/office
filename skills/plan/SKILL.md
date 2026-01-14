@@ -1,6 +1,6 @@
 ---
 name: plan
-description: "Use after /imagine completes to create an executable implementation plan. The War Room agents (Project Manager, Team Lead, DevOps, Agent Organizer) work automatically to produce plan.md, tasks.yaml, and 05-implementation-spec.md."
+description: "Use after /imagine completes to create an executable implementation plan. The War Room agents (Project Manager, Team Lead, DevOps, Agent Organizer) work automatically to produce plan.md, tasks.yaml, 05-implementation-spec.md, and update session.yaml."
 ---
 
 # /plan - Create Executable Implementation Plan
@@ -164,7 +164,7 @@ git commit -m "feat: add specific feature"
 
 ### 8. Output Generation
 
-Produce three files:
+Produce four files:
 
 **`05-implementation-spec.md`** (detailed TDD steps):
 - Generated in step 7 above
@@ -214,6 +214,10 @@ Key structure:
 - Feature-level `depends_on` controls parallel execution
 - Task-level `depends_on` controls order within feature
 - Each feature maps to one branch and one worktree
+
+**`session.yaml`** (updated):
+- Update `status: plan_complete`
+- Add plan metadata (phases, tasks, agents involved)
 
 ### 9. User Review
 
