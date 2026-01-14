@@ -63,6 +63,7 @@ phases:
 Assign to appropriate agent:
 - **backend_engineer**: API, database, server logic
 - **frontend_engineer**: UI components, client state
+- **mobile_developer**: Mobile screens, app navigation, platform integrations
 - **data_engineer**: Data pipelines, analytics
 - **automation_developer**: Tests, CI/CD, scripts
 - **devops**: Infrastructure, deployment
