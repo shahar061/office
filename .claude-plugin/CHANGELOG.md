@@ -2,6 +2,13 @@
 
 All notable changes to the Office plugin will be documented in this file.
 
+## [0.2.4] - 2026-01-14
+
+### Fixed
+
+- **Imagine skill session.yaml creation**: Made session.yaml creation explicit in Session Check section with initial file template
+- **Plan skill output documentation**: Clarified that plan phase UPDATES (not creates) session.yaml
+
 ## [0.2.3] - 2026-01-14
 
 ### Fixed

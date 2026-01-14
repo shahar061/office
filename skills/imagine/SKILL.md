@@ -1,6 +1,6 @@
 ---
 name: imagine
-description: "Use when a user wants to develop a rough idea into a product design. Activates a virtual startup team that guides the user through Discovery, Definition, Validation, and Architecture phases."
+description: "Use when a user wants to develop a rough idea into a product design. Activates a virtual startup team that guides the user through Discovery, Definition, Validation, and Architecture phases. Creates session.yaml and four design documents."
 ---
 
 # /imagine - Transform Ideas into Designs
@@ -30,7 +30,20 @@ First, check for existing session:
 
 - If exists and incomplete: "Found incomplete session about [topic]. Continue or start fresh?"
 - If exists and complete: "This project is planned. Run /plan or /imagine --new"
-- If not exists: Create new session
+- If not exists: Create `docs/office/session.yaml`:
+
+```yaml
+created: "[timestamp]"
+updated: "[timestamp]"
+topic: "[project-name]"
+status: "in_progress"
+current_phase: "discovery"
+completed_phases: []
+context:
+  target_users: ""
+  core_problem: ""
+  key_decisions: []
+```
 
 ### 2. Discovery Phase (CEO)
 
