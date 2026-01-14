@@ -2,6 +2,17 @@
 
 All notable changes to the Office plugin will be documented in this file.
 
+## [0.2.1] - 2026-01-14
+
+### Added
+
+- **Mobile Developer agent**: New cross-platform mobile specialist (14th agent)
+  - Consults during `/imagine` boardroom on platform constraints
+  - Executes mobile tasks during `/build` (React Native, Flutter)
+  - Advises on app store requirements, offline patterns, push notifications, deep linking
+- Updated Team Lead with `mobile_developer` domain for task routing
+- Updated Chief Architect to consult Mobile Developer on mobile projects
+
 ## [0.2.0] - 2026-01-14
 
 ### Added
