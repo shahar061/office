@@ -57,7 +57,7 @@ During `/build`, orchestrate the agent pool:
 
 **Main loop:**
 - Track feature status (pending, in_progress, completed, failed)
-- Spawn workspace:prepare for ready features
+- Invoke superpowers:using-git-worktrees for ready features
 - Dispatch tasks to domain-matched agents
 - Monitor step-level progress
 - **Track timestamps:** When updating build-state.yaml:
@@ -66,7 +66,7 @@ During `/build`, orchestrate the agent pool:
   - Use ISO 8601 format: `2026-01-13T22:15:00Z`
 - Handle failures (retry with context, escalate after limit)
 - Apply completion policy when feature done
-- Trigger workspace:cleanup after merge/PR
+- Invoke superpowers:finishing-a-development-branch after merge/PR
 
 **Announcements:**
 - "Starting feature [name]... Creating worktree..."
@@ -74,6 +74,9 @@ During `/build`, orchestrate the agent pool:
 - "Feature [name] complete. [Applying policy]..."
 - "Task [id] failed. Retrying with error context... (Attempt N/M)"
 - "Build complete! [N] features, [M] tasks, [T] time"
+- "[Task] in code review... (Attempt N/3)"
+- "Code review passed for [task]. Moving to next task."
+- "Code review has warnings for [task]. Continuing with has-warnings flag."
 
 ## Session States
 
