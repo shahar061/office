@@ -21,27 +21,36 @@ Starts a local web dashboard that visualizes `/build` progress in real-time. The
 
 ### Starting the Dashboard
 
-1. **Check Python 3**
+1. **Find the plugin installation path**
+   ```bash
+   DASHBOARD_DIR=$(find ~/.claude/plugins/cache -type f -name "server.py" -path "*/office/*/dashboard/*" 2>/dev/null | sort -V | tail -1 | xargs dirname)
+   echo "Dashboard found at: $DASHBOARD_DIR"
+   ```
+   If empty, the office plugin may not be installed.
+
+2. **Check Python 3**
    ```bash
    python3 --version
    ```
    If not found, display error with install instructions.
 
-2. **Run Setup (first time)**
+3. **Run Setup (first time only)**
    ```bash
-   cd dashboard
-   ./setup.sh
+   cd "$DASHBOARD_DIR" && ./setup.sh
    ```
    Creates virtual environment and installs dependencies.
 
-3. **Start Server**
+4. **Start Server**
    ```bash
-   cd dashboard
-   source .venv/bin/activate
-   python server.py --port ${PORT:-5050}
+   cd "$DASHBOARD_DIR" && source .venv/bin/activate && python server.py --office-dir "$(pwd)/docs/office"
+   ```
+   Note: `$(pwd)` should be the user's project directory, not the dashboard directory. Run this from the project root:
+   ```bash
+   PROJECT_DIR=$(pwd)
+   cd "$DASHBOARD_DIR" && source .venv/bin/activate && python server.py --office-dir "$PROJECT_DIR/docs/office"
    ```
 
-4. **Report URL**
+5. **Report URL**
    ```
    Dashboard running at http://localhost:5050
    Open in browser to view build progress.

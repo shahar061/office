@@ -2,6 +2,15 @@
 
 All notable changes to the Office plugin will be documented in this file.
 
+## [0.2.19] - 2026-01-14
+
+### Fixed
+
+- **Dashboard skill path resolution**: Fixed skill to find plugin installation in cache directory
+  - Uses `find` to locate dashboard in `~/.claude/plugins/cache/`
+  - Gets latest version with `sort -V`
+  - Correctly passes project's `docs/office` path to server
+
 ## [0.2.18] - 2026-01-14
 
 ### Fixed
