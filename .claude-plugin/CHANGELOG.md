@@ -2,6 +2,15 @@
 
 All notable changes to the Office plugin will be documented in this file.
 
+## [0.2.18] - 2026-01-14
+
+### Fixed
+
+- **Dashboard field mapping for build-state.yaml**: Fixed data merge to handle actual build-state format
+  - Maps `pending` status to `queued` for frontend compatibility
+  - Maps `attempts` field to `retry_count`
+  - Added `review_status` passthrough for code review warnings
+
 ## [0.2.17] - 2026-01-14
 
 ### Changed

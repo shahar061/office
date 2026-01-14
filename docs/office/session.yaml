@@ -1,0 +1,10 @@
+created: "2026-01-14T10:00:00Z"
+updated: "2026-01-14T10:00:00Z"
+topic: "pending"
+status: "in_progress"
+current_phase: "discovery"
+completed_phases: []
+context:
+  target_users: ""
+  core_problem: ""
+  key_decisions: []

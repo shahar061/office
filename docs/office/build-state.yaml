@@ -1,0 +1,32 @@
+build:
+  started_at: "2026-01-13T22:00:00Z"
+  status: in_progress
+  completion_policy: checkpoint
+  retry_limit: 3
+
+features:
+  - id: user-auth
+    status: in_progress
+    branch: feature/user-auth
+    started_at: "2026-01-13T22:00:00Z"
+    tasks:
+      - id: auth-1
+        status: completed
+        agent: backend-engineer
+        started_at: "2026-01-13T22:00:00Z"
+        status_changed_at: "2026-01-13T22:15:00Z"
+        retry_count: 0
+      - id: auth-2
+        status: in_progress
+        agent: backend-engineer
+        started_at: "2026-01-13T22:16:00Z"
+        status_changed_at: "2026-01-13T22:16:00Z"
+        retry_count: 1
+        current_step: 3
+      - id: auth-3
+        status: queued
+        retry_count: 0
+  - id: payments
+    status: pending
+    branch: feature/payments
+    tasks: []

@@ -1,0 +1,32 @@
+features:
+  - id: user-auth
+    name: User Authentication
+    branch: feature/user-auth
+    depends_on: []
+    tasks:
+      - id: auth-1
+        title: Create user model
+        agent: backend-engineer
+        depends_on: []
+      - id: auth-2
+        title: Build login API
+        agent: backend-engineer
+        depends_on: [auth-1]
+      - id: auth-3
+        title: Create login form
+        agent: frontend-engineer
+        depends_on: [auth-2]
+
+  - id: payments
+    name: Payment Integration
+    branch: feature/payments
+    depends_on: [user-auth]
+    tasks:
+      - id: pay-1
+        title: Stripe integration
+        agent: backend-engineer
+        depends_on: []
+      - id: pay-2
+        title: Checkout UI
+        agent: frontend-engineer
+        depends_on: [pay-1]

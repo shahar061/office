@@ -149,15 +149,21 @@ def merge_task_data(tasks_yaml, build_state):
         for task in feature.get('tasks', []):
             task_id = task['id']
             task_state = state_tasks.get(task_id, {})
+            # Map status: treat 'pending' as 'queued' for frontend
+            status = task_state.get('status', 'queued')
+            if status == 'pending':
+                status = 'queued'
             merged_tasks.append({
                 **task,
-                'status': task_state.get('status', 'queued'),
+                'status': status,
                 'agent': task_state.get('agent'),
                 'started_at': task_state.get('started_at'),
                 'status_changed_at': task_state.get('status_changed_at'),
-                'retry_count': task_state.get('retry_count', 0),
+                # Map 'attempts' to 'retry_count' for frontend compatibility
+                'retry_count': task_state.get('retry_count', task_state.get('attempts', 0)),
                 'error': task_state.get('error'),
                 'current_step': task_state.get('current_step'),
+                'review_status': task_state.get('review_status'),
             })
 
         merged.append({
