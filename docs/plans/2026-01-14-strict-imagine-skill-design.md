@@ -1,4 +1,4 @@
-# Design: Strict Execution for /imagine Skill
+# Design: Minimal Orchestrator for /imagine Skill
 
 ## Problem
 
@@ -7,49 +7,52 @@ The `/imagine` skill was being ignored by the assistant. Instead of spawning age
 - Created documents with wrong names (`01-product-vision.md` instead of `01-vision-brief.md`)
 - Roleplayed as multiple experts instead of invoking the defined agents
 
-Root cause: The skill read like documentation/reference material rather than imperative commands.
+Root cause: The model reads the entire skill at once and can skip/reorder steps at will. Prompt engineering alone isn't enough - models may "know better" and improvise.
 
-## Solution
+## Solution: Minimal Orchestrator Pattern
 
-Rewrote the skill with strict enforcement:
+Instead of a multi-step skill that the model might skip through, we use a **state machine** that does **ONE action per invocation**.
 
-### 1. Critical Preamble
-Added `<CRITICAL>` block at the top with explicit rules:
-- Execute steps IN ORDER
-- Use Task tool EXACTLY as specified
-- WAIT for each Task to complete
-- NEVER improvise
+### How It Works
 
-### 2. Imperative Commands
-Changed language from reference-style to command-style:
-- "DO THIS NOW. Do not greet the user. Do not ask questions."
-- "STOP HERE. Wait for X before proceeding."
-- "Say EXACTLY this:"
+```
+/imagine → Check state → Do ONE action → Update state → STOP
+          ↑                                              │
+          └──────── User runs /imagine again ───────────┘
+```
 
-### 3. Table-Driven Routing
-Replaced prose descriptions with lookup tables:
-- Phase → Agent mapping
-- Agent → Prompt mapping
-- No room for interpretation
+### State Transitions
 
-### 4. Explicit Forbidden Actions
-Added `FORBIDDEN` blocks listing what NOT to do:
-- Do NOT roleplay as the CEO yourself
-- Do NOT write the Vision Brief yourself
+| State | Action | Next State |
+|-------|--------|------------|
+| (no session.yaml) | Create session.yaml | `discovery` |
+| `discovery` | Spawn CEO → writes 01-vision-brief.md | `definition` |
+| `definition` | Spawn PM → writes 02-prd.md | `validation` |
+| `validation` | Spawn Market Researcher → writes 03-market-analysis.md | `architecture` |
+| `architecture` | Spawn Chief Architect → writes 04-system-design.md | `complete` |
+| `complete` | Commit all docs | (done) |
 
-### 5. Failure Mode Checklist
-Added self-check at the end:
-- "You are FAILING if you typed dialogue without invoking Task tool first"
-- Lists specific failure modes from the original incident
+### Why This Works
+
+1. **Structural enforcement** - Model can only see instructions for current state
+2. **No multi-step temptation** - Each section is self-contained with explicit STOP
+3. **User-driven progression** - User controls when to advance by re-running command
+4. **State verification** - Must read session.yaml before acting
+
+### Trade-offs
+
+- **Pro:** Much harder for model to skip steps or improvise
+- **Con:** User must run `/imagine` 6 times to complete all phases
+- **Con:** Less "magical" flow - more explicit/mechanical
 
 ## Changes Made
 
-- `skills/imagine/SKILL.md` - Complete rewrite with strict execution format
+- `skills/imagine/SKILL.md` - Complete rewrite as minimal orchestrator
 
 ## Testing
 
 Run `/imagine` in a new session and verify:
-1. First action is Task tool invocation (not dialogue)
-2. Agent Organizer creates `session.yaml`
-3. CEO agent is spawned for Discovery phase
-4. Correct document names are used throughout
+1. First invocation: Creates session.yaml, tells user to run again
+2. Second invocation: Spawns CEO for discovery
+3. Each subsequent invocation: One phase at a time
+4. Model never does multiple phases in one invocation

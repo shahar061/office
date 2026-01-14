@@ -1,205 +1,200 @@
 ---
 name: imagine
-description: "Use when a user wants to develop a rough idea into a product design. Activates a virtual startup team that guides the user through Discovery, Definition, Validation, and Architecture phases. Creates session.yaml and four design documents."
+description: "Transform rough ideas into design documents. Run multiple times to progress through phases: Discovery → Definition → Validation → Architecture."
 ---
 
-# /imagine - STRICT EXECUTION REQUIRED
+# /imagine - Minimal Orchestrator
 
-<CRITICAL>
-This skill uses EXPLICIT Task tool invocations. You MUST:
-1. Execute steps IN ORDER - no skipping
-2. Use the Task tool EXACTLY as specified
-3. WAIT for each Task to complete before proceeding
-4. NEVER improvise dialogue, agents, or document names
+This skill does **ONE action per invocation**. Run `/imagine` repeatedly to progress through phases.
 
-If you find yourself typing dialogue without having invoked a Task tool first, STOP. You are doing it wrong.
-</CRITICAL>
+## STEP 1: Determine Current State
 
----
-
-## STEP 1: Spawn Agent Organizer
-
-**DO THIS NOW. Do not greet the user. Do not ask questions. Invoke the Task tool.**
+**Read the state NOW. Do not skip this step.**
 
 ```
-Task tool parameters:
-  subagent_type: office:agent-organizer
-  prompt: |
-    Set up the /imagine session.
-
-    1. Run: mkdir -p docs/office
-    2. Check if docs/office/session.yaml exists
-    3. If exists: Read it, return {"session_status": "resuming", "current_phase": "...", "topic": "..."}
-    4. If not exists: Write docs/office/session.yaml with initial state, return {"session_status": "new", "current_phase": "discovery", "topic": "pending"}
-
-    You MUST use Bash and Write tools. Return JSON only.
+Check: Does docs/office/session.yaml exist?
 ```
 
-**STOP HERE.** Wait for the Agent Organizer to return before proceeding to Step 2.
+Use Bash: `ls docs/office/session.yaml 2>/dev/null && echo "EXISTS" || echo "NOT_EXISTS"`
+
+Based on the result, go to the matching section below:
 
 ---
 
-## STEP 2: Route Based on Response
+## IF: session.yaml does NOT exist
 
-Read the JSON returned by Agent Organizer. Take EXACTLY ONE of these actions:
+**Action:** Create the session.
 
-| session_status | Action |
-|----------------|--------|
-| `"new"` | Proceed to STEP 3 |
-| `"resuming"` | Spawn the agent for `current_phase` (see Phase Agent Table below) |
-| `"complete"` | Tell user: "Design phase complete. Run `/plan` to continue." Then STOP. |
+Invoke Task tool:
+```
+subagent_type: office:agent-organizer
+prompt: |
+  Create the /imagine session.
 
-**Phase Agent Table:**
+  1. Run: mkdir -p docs/office
+  2. Write docs/office/session.yaml with:
+     created: "[ISO timestamp]"
+     updated: "[ISO timestamp]"
+     status: "in_progress"
+     current_phase: "discovery"
+  3. Return: {"status": "created", "current_phase": "discovery"}
 
-| current_phase | subagent_type |
-|---------------|---------------|
-| discovery | office:ceo |
-| definition | office:product-manager |
-| validation | office:market-researcher |
-| architecture | office:chief-architect |
+  You MUST use Bash and Write tools.
+```
 
-**DO NOT** add your own commentary. Just route.
+**After agent returns, say EXACTLY:**
+
+> Session created. Run `/imagine` again to start Discovery phase with the CEO.
+
+**STOP. Do not continue.**
 
 ---
 
-## STEP 3: Spawn CEO for Discovery
+## IF: current_phase is "discovery"
 
-**Invoke the Task tool NOW:**
+**Action:** Run Discovery with CEO.
 
+Invoke Task tool:
 ```
-Task tool parameters:
-  subagent_type: office:ceo
-  prompt: |
-    Lead the Discovery phase for /imagine.
+subagent_type: office:ceo
+prompt: |
+  Lead the Discovery phase.
 
-    Your job: Understand the user's idea through collaborative dialogue.
-    - Ask about the problem being solved
-    - Identify target users
-    - Explore the vision
-    - Ask ONE question at a time
-
-    When you have enough understanding:
-    1. Use the Write tool to create docs/office/01-vision-brief.md
-    2. Show the user what you wrote
-    3. Ask: "Does this capture your vision?"
-
-    Return when user confirms the Vision Brief is complete.
+  1. Read docs/office/session.yaml to understand context
+  2. Engage user in dialogue to understand their idea:
+     - What problem are you solving?
+     - Who is this for?
+     - What does success look like?
+  3. Ask ONE question at a time. Wait for responses.
+  4. When you have enough understanding, write docs/office/01-vision-brief.md
+  5. Show the user what you wrote and confirm it captures their vision
+  6. When confirmed, update session.yaml: current_phase: "definition"
+  7. Return: {"status": "complete", "document": "01-vision-brief.md"}
 ```
 
-**STOP HERE.** Wait for the CEO agent to complete before proceeding to Step 4.
+**After agent returns, say EXACTLY:**
 
-**FORBIDDEN:**
-- Do NOT roleplay as the CEO yourself
-- Do NOT write the Vision Brief yourself
-- Do NOT ask discovery questions yourself
+> Discovery complete. Vision Brief created. Run `/imagine` again for Definition phase with the Product Manager.
+
+**STOP. Do not continue.**
 
 ---
 
-## STEP 4: Phase Transition Loop
+## IF: current_phase is "definition"
 
-After each phase agent completes, do EXACTLY this sequence:
+**Action:** Run Definition with Product Manager.
 
-### 4A: Checkpoint with Agent Organizer
-
-**Invoke the Task tool:**
-
+Invoke Task tool:
 ```
-Task tool parameters:
-  subagent_type: office:agent-organizer
-  prompt: |
-    Checkpoint: [COMPLETED_PHASE] → [NEXT_PHASE] transition.
+subagent_type: office:product-manager
+prompt: |
+  Lead the Definition phase.
 
-    1. Verify docs/office/[DOCUMENT].md exists
-    2. Edit docs/office/session.yaml:
-       - Set current_phase: "[NEXT_PHASE]"
-       - Append "[COMPLETED_PHASE]" to completed_phases
-       - Update "updated" timestamp
-    3. Return confirmation
-
-    You MUST use Edit tool. Do not describe changes.
+  1. Read docs/office/01-vision-brief.md
+  2. Define personas based on target users
+  3. Create user stories for key capabilities
+  4. Prioritize features with user input
+  5. Write docs/office/02-prd.md
+  6. Confirm with user
+  7. When confirmed, update session.yaml: current_phase: "validation"
+  8. Return: {"status": "complete", "document": "02-prd.md"}
 ```
 
-### 4B: Spawn Next Phase Agent
+**After agent returns, say EXACTLY:**
 
-**Use this table - no exceptions:**
+> Definition complete. PRD created. Run `/imagine` again for Validation phase with the Market Researcher.
 
-| Completed Phase | Document to Verify | Next Agent | Next Phase |
-|-----------------|-------------------|------------|------------|
-| discovery | 01-vision-brief.md | office:product-manager | definition |
-| definition | 02-prd.md | office:market-researcher | validation |
-| validation | 03-market-analysis.md | office:chief-architect | architecture |
-
-**Invoke the Task tool for the next agent:**
-
-| Agent | Prompt |
-|-------|--------|
-| office:product-manager | "Lead the Definition phase. Review docs/office/01-vision-brief.md. Define personas, user stories, prioritize features. Write docs/office/02-prd.md. Confirm with user before completing." |
-| office:market-researcher | "Lead the Validation phase. Review docs/office/02-prd.md. Use WebSearch to research market. Analyze competitors. Write docs/office/03-market-analysis.md. Confirm with user before completing." |
-| office:chief-architect | "Lead the Architecture phase. Review all docs in docs/office/. Design system components, recommend tech stack. Consult specialists if needed. Write docs/office/04-system-design.md. Confirm with user before completing." |
-
-**STOP after each agent.** Wait for completion before next checkpoint.
+**STOP. Do not continue.**
 
 ---
 
-## STEP 5: Complete Imagine Phase
+## IF: current_phase is "validation"
 
-After the Chief Architect agent completes:
+**Action:** Run Validation with Market Researcher.
 
-### 5A: Final Checkpoint
-
-**Invoke the Task tool:**
-
+Invoke Task tool:
 ```
-Task tool parameters:
-  subagent_type: office:agent-organizer
-  prompt: |
-    Final checkpoint: Mark imagine phase complete.
+subagent_type: office:market-researcher
+prompt: |
+  Lead the Validation phase.
 
-    1. Verify docs/office/04-system-design.md exists
-    2. Edit docs/office/session.yaml:
-       - Set status: "imagine_complete"
-       - Set current_phase: "complete"
-       - Append "architecture" to completed_phases
-       - Update "updated" timestamp
-    3. Return confirmation
+  1. Read docs/office/01-vision-brief.md and docs/office/02-prd.md
+  2. Use WebSearch to research the market
+  3. Identify competitors and alternatives
+  4. Analyze market fit and positioning
+  5. Write docs/office/03-market-analysis.md
+  6. Confirm with user
+  7. When confirmed, update session.yaml: current_phase: "architecture"
+  8. Return: {"status": "complete", "document": "03-market-analysis.md"}
 ```
 
-### 5B: Commit Documents
+**After agent returns, say EXACTLY:**
 
-**Run this Bash command:**
+> Validation complete. Market Analysis created. Run `/imagine` again for Architecture phase with the Chief Architect.
 
+**STOP. Do not continue.**
+
+---
+
+## IF: current_phase is "architecture"
+
+**Action:** Run Architecture with Chief Architect.
+
+Invoke Task tool:
+```
+subagent_type: office:chief-architect
+prompt: |
+  Lead the Architecture phase.
+
+  1. Read all docs in docs/office/
+  2. Design system components and data flow
+  3. Recommend tech stack
+  4. Write docs/office/04-system-design.md
+  5. Confirm with user
+  6. When confirmed, update session.yaml: status: "imagine_complete", current_phase: "complete"
+  7. Return: {"status": "complete", "document": "04-system-design.md"}
+```
+
+**After agent returns, say EXACTLY:**
+
+> Architecture complete. System Design created. Run `/imagine` again to finalize.
+
+**STOP. Do not continue.**
+
+---
+
+## IF: current_phase is "complete" OR status is "imagine_complete"
+
+**Action:** Finalize and commit.
+
+Run Bash:
 ```bash
 git add docs/office/ && git commit -m "docs(office): complete imagine phase
 
-Generated design documents:
 - 01-vision-brief.md
 - 02-prd.md
 - 03-market-analysis.md
 - 04-system-design.md
-- session.yaml
 
 Co-Authored-By: Office Plugin <noreply@anthropic.com>"
 ```
 
-### 5C: Notify User
+**Say EXACTLY:**
 
-**Say EXACTLY this:**
-
-> Design phase complete! All documents committed to git.
+> Design phase complete! All documents committed.
 >
-> Ready to run `/plan` to create your implementation plan?
+> Ready to run `/plan` to create your implementation plan.
 
-**DONE.** Do not continue beyond this point.
+**STOP. This is the end of /imagine.**
 
 ---
 
-## Failure Modes to Avoid
+## Failure Modes
 
 You are FAILING if you:
-- [ ] Typed "Let me ask you some questions..." without invoking Task tool first
-- [ ] Described what an agent would do instead of spawning it
-- [ ] Used agent names not in the table (e.g., "Business Analyst", "UX Designer", "Tech Lead")
-- [ ] Created documents with wrong names (e.g., "01-product-vision.md" instead of "01-vision-brief.md")
-- [ ] Roleplayed as multiple experts yourself instead of spawning agents
+- [ ] Did more than ONE phase in a single invocation
+- [ ] Skipped reading session.yaml state
+- [ ] Continued after "STOP. Do not continue."
+- [ ] Spawned multiple agents in one invocation
 
-If ANY of these are true, STOP and start over from STEP 1.
+**ONE invocation = ONE action. Then STOP.**
