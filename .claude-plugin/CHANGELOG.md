@@ -2,6 +2,12 @@
 
 All notable changes to the Office plugin will be documented in this file.
 
+## [0.2.2] - 2026-01-14
+
+### Fixed
+
+- **Plan skill missing 05-implementation-spec.md**: The `/plan` skill only documented 2 output files instead of 3, causing the implementation spec to not be generated. Fixed all references to include `05-implementation-spec.md`.
+
 ## [0.2.1] - 2026-01-14
 
 ### Added

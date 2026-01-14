@@ -1,6 +1,6 @@
 ---
 name: plan
-description: "Use after /imagine completes to create an executable implementation plan. The War Room agents (Project Manager, Team Lead, DevOps, Agent Organizer) work automatically to produce plan.md and tasks.yaml."
+description: "Use after /imagine completes to create an executable implementation plan. The War Room agents (Project Manager, Team Lead, DevOps, Agent Organizer) work automatically to produce plan.md, tasks.yaml, and 05-implementation-spec.md."
 ---
 
 # /plan - Create Executable Implementation Plan
@@ -218,7 +218,7 @@ Key structure:
 ### 9. User Review
 
 Agent Organizer presents output:
-"Implementation plan complete. Please review plan.md and tasks.yaml.
+"Implementation plan complete. Please review plan.md, tasks.yaml, and 05-implementation-spec.md.
 
 - [N] phases identified
 - [M] tasks created
