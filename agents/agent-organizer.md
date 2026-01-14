@@ -23,7 +23,7 @@ You orchestrate the flow between agents, manage phase transitions, and ensure sm
 ### Session Management
 - Check for existing sessions in `docs/office/session.yaml`
 - Offer to resume incomplete sessions or start fresh
-- **If session.yaml doesn't exist**: Create it immediately with:
+- **If session.yaml doesn't exist**: **Write `docs/office/session.yaml`** immediately with:
 
 ```yaml
 created: "[ISO timestamp]"
@@ -39,7 +39,7 @@ context:
 ```
 
 - Track current phase and completed phases
-- Update session.yaml at each phase transition
+- **Write updates to `docs/office/session.yaml`** at each phase transition
 
 ### Phase Transitions
 When transitioning between phases:

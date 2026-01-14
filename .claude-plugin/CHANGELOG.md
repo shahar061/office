@@ -2,6 +2,34 @@
 
 All notable changes to the Office plugin will be documented in this file.
 
+## [0.2.9] - 2026-01-14
+
+### Fixed
+
+- **Agent Organizer session.yaml instructions inconsistent**: Applied same imperative pattern for consistency
+  - `agents/agent-organizer.md`: Changed "Create it immediately" to "**Write `docs/office/session.yaml`** immediately"
+  - `agents/agent-organizer.md`: Changed "Update session.yaml" to "**Write updates to `docs/office/session.yaml`**"
+
+## [0.2.8] - 2026-01-14
+
+### Fixed
+
+- **Plan phase files not being written**: Same passive language issue as imagine phase
+  - `skills/plan/SKILL.md`: Changed "Team Lead generates" to "**Team Lead MUST write**"
+  - `skills/plan/SKILL.md`: Changed "Produce four files" to "**You MUST write these four files**"
+  - `agents/team-lead.md`: Changed "You produce TWO files" to "**You MUST write TWO files to `docs/office/`**"
+  - `agents/team-lead.md`: Changed "Produce `tasks.yaml`" to "**Write `docs/office/tasks.yaml`**"
+  - `agents/team-lead.md`: Changed "Produce `05-implementation-spec.md`" to "**Write `docs/office/05-implementation-spec.md`**"
+
+## [0.2.7] - 2026-01-14
+
+### Fixed
+
+- **Session check step being skipped**: Step 1 in imagine SKILL.md used passive language ("First, check...") instead of imperative commands, causing Claude to skip directly to Discovery phase
+  - Changed to bold imperative: "**BEFORE PROCEEDING TO DISCOVERY, you MUST complete these steps:**"
+  - Added numbered action list with explicit directory creation
+  - Added blocking statement: "**Do not proceed to Discovery Phase until session.yaml exists.**"
+
 ## [0.2.6] - 2026-01-14
 
 ### Fixed

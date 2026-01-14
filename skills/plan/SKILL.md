@@ -107,9 +107,7 @@ Agent Organizer asks user to resolve before proceeding.
 
 ### 7. Implementation Spec Generation
 
-Team Lead generates detailed implementation spec with TDD steps.
-
-**Output file:** `docs/office/05-implementation-spec.md`
+**Team Lead MUST write `docs/office/05-implementation-spec.md`** with detailed TDD steps for each task.
 
 **Format for each task:**
 
@@ -164,7 +162,7 @@ git commit -m "feat: add specific feature"
 
 ### 8. Output Generation
 
-Produce four files:
+**You MUST write these four files to `docs/office/`:**
 
 **`05-implementation-spec.md`** (detailed TDD steps):
 - Generated in step 7 above

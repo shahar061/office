@@ -22,15 +22,13 @@ The `/imagine` skill activates your virtual startup team to transform a rough id
 
 ### 1. Session Check (Agent Organizer)
 
-First, check for existing session:
+**BEFORE PROCEEDING TO DISCOVERY, you MUST complete these steps:**
 
-```yaml
-# Check docs/office/session.yaml
-```
-
-- If exists and incomplete: "Found incomplete session about [topic]. Continue or start fresh?"
-- If exists and complete: "This project is planned. Run /plan or /imagine --new"
-- If not exists: Create `docs/office/session.yaml`:
+1. Ensure `docs/office/` directory exists (create it if needed)
+2. Check if `docs/office/session.yaml` exists:
+   - If exists and incomplete: Ask "Found incomplete session about [topic]. Continue or start fresh?"
+   - If exists and complete: Say "This project is planned. Run /plan or /imagine --new"
+   - **If not exists: Write `docs/office/session.yaml` with this content:**
 
 ```yaml
 created: "[timestamp]"
@@ -44,6 +42,8 @@ context:
   core_problem: ""
   key_decisions: []
 ```
+
+**Do not proceed to Discovery Phase until session.yaml exists.**
 
 ### 2. Discovery Phase (CEO)
 

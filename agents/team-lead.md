@@ -29,13 +29,13 @@ You participate in the `/plan` War Room. You take the System Design and break it
 
 ## Output Files
 
-You produce TWO files during `/plan`:
-1. **`tasks.yaml`** - Machine-readable task manifest
-2. **`05-implementation-spec.md`** - Detailed TDD implementation steps
+**You MUST write TWO files to `docs/office/` during `/plan`:**
+1. **`docs/office/tasks.yaml`** - Machine-readable task manifest
+2. **`docs/office/05-implementation-spec.md`** - Detailed TDD implementation steps
 
 ## Tasks.yaml Structure
 
-Produce `tasks.yaml`:
+**Write `docs/office/tasks.yaml`:**
 
 ```yaml
 version: "1.0"
@@ -76,7 +76,7 @@ Assign to appropriate agent:
 
 ## 05-implementation-spec.md Structure
 
-Produce `05-implementation-spec.md` with detailed TDD steps for each task:
+**Write `docs/office/05-implementation-spec.md`** with detailed TDD steps for each task:
 
 ```markdown
 ### Task [id]: [title]
