@@ -112,7 +112,7 @@ While features remain incomplete:
 
   2. For each ready feature (in parallel):
      a. Agent Organizer announces: "Starting feature [name]..."
-     b. Call workspace:prepare skill
+     b. Invoke superpowers:using-git-worktrees skill
      c. Update build-state.yaml: feature status = in_progress
      d. Add feature's tasks to queue
 
@@ -144,7 +144,7 @@ While features remain incomplete:
        - auto-merge: merge to main, delete branch
        - pr: create PR, wait for approval
        - checkpoint: pause for user review
-     - Call workspace:cleanup skill
+     - Invoke superpowers:finishing-a-development-branch skill
      - Check if blocked features can now start
 ```
 
