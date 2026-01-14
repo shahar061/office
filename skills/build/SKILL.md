@@ -302,6 +302,8 @@ features:
         agent: backend-engineer
         attempts: 1
         current_step: 5
+        review_attempts: 1
+        review_status: clean
         steps:
           - step: 1
             status: completed
@@ -336,6 +338,32 @@ features:
             status: pending
           - step: 5
             status: pending
+
+      - id: dash-2
+        status: in_review
+        agent: frontend-engineer
+        attempts: 1
+        current_step: 5
+        review_attempts: 2
+        steps:
+          - step: 1
+            status: completed
+          - step: 2
+            status: completed
+          - step: 3
+            status: completed
+          - step: 4
+            status: completed
+          - step: 5
+            status: completed
+
+      - id: dash-3
+        status: completed
+        agent: frontend-engineer
+        attempts: 1
+        current_step: 5
+        review_attempts: 3
+        review_status: has-warnings
 ```
 
 ## Files Created/Modified
