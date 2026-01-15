@@ -2,6 +2,16 @@
 
 All notable changes to the Office plugin will be documented in this file.
 
+## [0.2.32] - 2026-01-15
+
+### Changed
+
+- **Matched /plan skill format to /imagine**: Copied working patterns from /imagine
+  - "Use the Task tool now:" - direct imperative
+  - "You MUST use the Write tool. Do not just describe what to do." - anti-passivity
+  - Simpler prompt structure, less template noise
+  - Clear step routing: "After X completes, do Y"
+
 ## [0.2.31] - 2026-01-15
 
 ### Changed
