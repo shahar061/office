@@ -33,6 +33,26 @@ You participate in the `/plan` War Room. You take the System Design and break it
 1. **`docs/office/tasks.yaml`** - Machine-readable task manifest
 2. **`docs/office/05-implementation-spec.md`** - Detailed TDD implementation steps
 
+## YAML Safety Rules
+
+When writing `tasks.yaml`, you MUST quote strings containing special characters to prevent parse errors:
+
+**Always quote strings that contain:**
+- Curly braces: `{}` → `'Returns {"status": "ok"}'`
+- Square brackets: `[]` → `'Array format [1,2,3]'`
+- Colons followed by space: `: ` → `'Key: value format'`
+- Hash symbols: `#` → `'Item #1'`
+- Leading special chars: `@`, `*`, `&`, `!`, `|`, `>`
+
+**Examples:**
+```yaml
+# WRONG - will break YAML parser
+- Health endpoint returns {"status": "ok"}
+
+# CORRECT - quoted string
+- 'Health endpoint returns {"status": "ok"}'
+```
+
 ## Tasks.yaml Structure
 
 **Write `docs/office/tasks.yaml`:**

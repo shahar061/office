@@ -213,6 +213,25 @@ Key structure:
 - Task-level `depends_on` controls order within feature
 - Each feature maps to one branch and one worktree
 
+### 8.5. Validate tasks.yaml
+
+After writing `tasks.yaml`, validate it can be parsed by PyYAML:
+
+```bash
+python3 -c "import yaml; yaml.safe_load(open('docs/office/tasks.yaml')); print('✓ tasks.yaml is valid YAML')"
+```
+
+**On validation failure:**
+```
+❌ tasks.yaml has YAML syntax error:
+   [error message]
+
+Common fix: Quote strings containing {}, [], :, or # characters.
+Example: 'Health endpoint returns {"status": "ok"}'
+```
+
+If validation fails, fix the syntax error and re-validate before proceeding.
+
 **`session.yaml`** (updated):
 - Update `status: plan_complete`
 - Add plan metadata (phases, tasks, agents involved)

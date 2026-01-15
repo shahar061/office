@@ -2,6 +2,15 @@
 
 All notable changes to the Office plugin will be documented in this file.
 
+## [0.2.20] - 2026-01-15
+
+### Added
+
+- **YAML validation for tasks.yaml**: Prevent invalid YAML from breaking dashboard
+  - Added YAML safety rules to Team Lead agent (quote strings with `{}`, `[]`, `:`, `#`)
+  - Added validation step in /plan skill to verify tasks.yaml parses correctly
+  - Clear error messages with fix instructions if validation fails
+
 ## [0.2.19] - 2026-01-14
 
 ### Fixed
