@@ -2,6 +2,24 @@
 
 All notable changes to the Office plugin will be documented in this file.
 
+## [0.2.39] - 2026-01-15
+
+### Fixed
+
+- **Agents not writing files**: Changed `tools.required` to `allowedTools` in all 14 agents
+  - Correct syntax: `allowedTools:` with YAML array (not `tools: required: [...]`)
+  - All agents can now use Write, Edit, Read, and other tools during their phases
+
+### Changed
+
+- **Warrooming skill: agents write directly**: Removed ADVISOR pattern since agents can now write files
+  - Agents read files themselves and write directly using Write/Edit tools
+  - No more content markers (PLAN_CONTENT_START/END, etc.)
+- **Warrooming skill: parallel execution**: Steps 3 & 4 now run in parallel
+  - Team Lead and DevOps dispatch in single message (both depend on PM's plan.md)
+- **Warrooming skill: no task limit**: Removed arbitrary 20-30 task limit
+  - Team Lead creates as many tasks as needed to fully implement the plan
+
 ## [0.2.38] - 2026-01-15
 
 ### Changed
