@@ -2,6 +2,15 @@
 
 All notable changes to the Office plugin will be documented in this file.
 
+## [0.2.29] - 2026-01-15
+
+### Fixed
+
+- **Added explicit Task tool invocations to /plan skill**: Skill was hanging because Claude didn't know HOW to spawn agents
+  - Step 2: Explicit `subagent_type="office:project-manager"` with prompt
+  - Step 3: Explicit parallel invocation for team-lead and devops
+  - Removed vague "Spawn agent" instructions
+
 ## [0.2.28] - 2026-01-15
 
 ### Changed

@@ -22,28 +22,36 @@ Requires completed `/imagine` session with:
 
 Unlike `/imagine`, the `/plan` phase is automated. User observes and reviews the final output.
 
-**Execute these steps in order:**
+**Execute these steps in order using the Task tool:**
 
 ### Step 1: Session Validation
-Spawn **Agent Organizer** to check session state:
+Check `docs/office/session.yaml`:
 - If `status != imagine_complete`: "Run /imagine first to create design documents."
 - If documents missing: "Missing [document]. Run /imagine to complete design."
-- If valid: Announce War Room start
+- If valid: Continue to step 2
 
 ### Step 2: Project Manager Creates plan.md
-Spawn **Project Manager** agent. Wait for completion before step 3.
+Use Task tool:
+```
+Task tool: subagent_type="office:project-manager"
+prompt="Read the design documents in docs/office/ (01-vision-brief.md through 04-system-design.md). Create docs/office/plan.md with implementation phases, milestones, and deliverables."
+```
+Wait for completion before step 3.
 
 ### Step 3: Parallel Execution (Team Lead + DevOps)
 **IMPORTANT:** Invoke BOTH Task tools in a SINGLE message:
 ```
-[Task tool: Team Lead agent]
-[Task tool: DevOps agent]
+Task tool: subagent_type="office:team-lead"
+prompt="Read docs/office/04-system-design.md and plan.md. Create docs/office/tasks.yaml and docs/office/05-implementation-spec.md with TDD steps for each task."
+
+Task tool: subagent_type="office:devops"
+prompt="Read docs/office/plan.md. Add an Environment section covering local dev setup, CI/CD, and deployment."
 ```
 Wait for both to complete before step 4.
 
-### Step 4: Agent Organizer Finalizes
-- Assign tasks to agents
-- Validate dependency graph (no cycles)
+### Step 4: Finalize
+- Review tasks.yaml for completeness
+- Validate no dependency cycles
 - Present summary to user
 
 ### Step 5: Validate tasks.yaml
