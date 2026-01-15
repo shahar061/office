@@ -2,6 +2,15 @@
 
 All notable changes to the Office plugin will be documented in this file.
 
+## [0.2.22] - 2026-01-15
+
+### Changed
+
+- **Parallel agent execution in /plan phase**: Project Manager, Team Lead, and DevOps now run concurrently
+  - Collapsed sequential steps 2-4 into single parallel step
+  - Added explicit instruction to invoke all three Task tools in one message
+  - Reduces plan phase time from 3 sequential rounds to 1 parallel round
+
 ## [0.2.21] - 2026-01-15
 
 ### Fixed

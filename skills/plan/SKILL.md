@@ -29,38 +29,43 @@ Check session state:
 - If documents missing: "Missing [document]. Run /imagine to complete design."
 - If valid: Announce War Room start
 
-### 2. Project Manager: Define Milestones
+### 2. Parallel Agent Work (PM, Team Lead, DevOps)
 
-Agent Organizer announces: "Project Manager is analyzing documents and defining milestones..."
+Agent Organizer announces: "Starting parallel planning work..."
 
-Project Manager:
+**IMPORTANT: To run agents in parallel, you MUST invoke all three Task tools in a SINGLE message.**
+
+Spawn these three agents simultaneously:
+
+**Project Manager** - Define milestones:
 - Reviews all four design documents
 - Identifies logical implementation phases
 - Defines milestone deliverables
 - Establishes phase dependencies
 
-### 3. Team Lead: Break Down Tasks
-
-Agent Organizer announces: "Team Lead is breaking down architecture into tasks..."
-
-Team Lead:
+**Team Lead** - Break down tasks:
 - Takes System Design components
 - Creates discrete, executable tasks
 - Defines task dependencies
 - Sets acceptance criteria
 - Targets 5-15 minute tasks
 
-### 4. DevOps: Environment Plan
-
-Agent Organizer announces: "DevOps is creating environment setup plan..."
-
-DevOps:
+**DevOps** - Environment plan:
 - Defines local dev setup
 - Plans CI/CD pipeline
 - Specifies infrastructure needs
 - Documents deployment strategy
 
-### 5. Agent Organizer: Assign Tasks
+**Example invocation (all in one message):**
+```
+[Task tool: Project Manager agent]
+[Task tool: Team Lead agent]
+[Task tool: DevOps agent]
+```
+
+Wait for all three agents to complete before proceeding to step 3.
+
+### 3. Agent Organizer: Assign Tasks
 
 Agent Organizer:
 - Reviews all tasks
@@ -68,7 +73,7 @@ Agent Organizer:
 - Validates dependency graph
 - Produces final tasks.yaml
 
-### 6. Dependency Validation
+### 4. Dependency Validation
 
 Agent Organizer validates the dependency graph:
 
@@ -105,7 +110,7 @@ Agent Organizer asks user to resolve before proceeding.
   - Execution order: user-auth → [settings, api-layer] → dashboard → admin
 ```
 
-### 7. Implementation Spec Generation
+### 5. Implementation Spec Generation
 
 **Team Lead MUST write `docs/office/05-implementation-spec.md`** with detailed TDD steps for each task.
 
@@ -160,12 +165,12 @@ git commit -m "feat: add specific feature"
 - Complete code - never "add validation logic here"
 - Each step is 2-5 minutes of work
 
-### 8. Output Generation
+### 6. Output Generation
 
 **You MUST write these four files to `docs/office/`:**
 
 **`05-implementation-spec.md`** (detailed TDD steps):
-- Generated in step 7 above
+- Generated in step 5 above
 - Contains exact file paths, test code, and implementation code for each task
 - This is the primary reference for `/build` agents
 
@@ -213,7 +218,7 @@ Key structure:
 - Task-level `depends_on` controls order within feature
 - Each feature maps to one branch and one worktree
 
-### 8.5. Validate tasks.yaml
+### 7. Validate tasks.yaml
 
 After writing `tasks.yaml`, validate it can be parsed by PyYAML:
 
@@ -236,7 +241,7 @@ If validation fails, fix the syntax error and re-validate before proceeding.
 - Update `status: plan_complete`
 - Add plan metadata (phases, tasks, agents involved)
 
-### 9. User Review
+### 8. User Review
 
 Agent Organizer presents output:
 "Implementation plan complete. Please review plan.md, tasks.yaml, and 05-implementation-spec.md.
@@ -250,7 +255,7 @@ Want me to adjust anything before we finalize?"
 User can request changes. Once approved:
 - Update session.yaml: `status: plan_complete`
 
-### 10. Commit Plan Documents
+### 9. Commit Plan Documents
 
 After user approves the plan, commit all documents to git:
 
