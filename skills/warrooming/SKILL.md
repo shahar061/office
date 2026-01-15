@@ -14,39 +14,21 @@ Transform design documents into an executable implementation plan.
 Check `docs/office/session.yaml`:
 - If `status` is not `imagine_complete`: Stop and say "Run /imagine first."
 
-## Step 1: Gather Context (Lean)
+## Step 1: Project Manager Creates Plan
 
-Read design documents and extract KEY SECTIONS only:
+**Do NOT read design documents into main context.** The agent reads files directly.
 
-```
-From 01-vision-brief.md: The Problem, The Vision, Key Capabilities
-From 02-prd.md: User Stories, Feature Priority table
-From 04-system-design.md: Technology Stack table, Components list
-```
-
-Do NOT pass full documents to agents - only relevant sections.
-
-## Step 2: Project Manager Creates Plan
-
-PM creates the phased implementation plan and writes it directly.
-
-**Dispatch with LEAN context:**
 ```
 Task tool:
   subagent_type: office:project-manager
   prompt: |
     # Project Manager: Create Implementation Plan
 
-    ## Key Context
+    ## Read These Files (extract key sections only)
 
-    ### Vision & Capabilities
-    [Paste: Problem, Vision, Key Capabilities from vision brief]
-
-    ### Features to Implement
-    [Paste: Feature Priority table from PRD]
-
-    ### Tech Stack
-    [Paste: Technology Stack table from system design]
+    - `docs/office/01-vision-brief.md` → Problem, Vision, Key Capabilities
+    - `docs/office/02-prd.md` → Feature Priority table
+    - `docs/office/04-system-design.md` → Technology Stack table
 
     ## Task
 
@@ -56,9 +38,9 @@ Task tool:
     Write the plan to `docs/office/plan.md` using the Write tool.
 ```
 
-## Step 3: Team Lead Creates Tasks
+## Step 2: Team Lead Creates Tasks
 
-Team Lead creates the task breakdown. **This must complete before Step 4.**
+**This must complete before Step 3.**
 
 ```
 Task tool:
@@ -66,25 +48,27 @@ Task tool:
   prompt: |
     # Team Lead: Create Task Breakdown
 
-    ## Context
+    ## Read These Files
 
-    Read the implementation plan from `docs/office/plan.md`.
-    Read the User Stories from `docs/office/02-prd.md`.
+    - `docs/office/plan.md` - The implementation plan
+    - `docs/office/02-prd.md` - User Stories section
 
     ## Task
 
-    Create tasks.yaml with as many tasks as needed to fully implement the plan.
+    Create tasks.yaml with tasks to fully implement the plan.
     Each task: id, description, assigned_agent, dependencies, acceptance_criteria.
     Keep it focused - no TDD steps here.
 
     Write to `docs/office/tasks.yaml` using the Write tool.
 ```
 
-## Step 4: DevOps + Parallel Spec Generation
+## Step 3: DevOps + Parallel Spec Generation (Background Agents)
 
-**After Step 3 completes**, run DevOps and N Team Leads in parallel.
+**After Step 2 completes**, run DevOps and N Team Leads in parallel as **background agents**.
 
-### 4a: Extract Phases
+> **Why background agents?** Each spec agent generates 20-50k tokens of output. Running them in the foreground would overflow the context window. Background agents write files independently and keep their output separate.
+
+### 3a: Extract Phases
 
 Run this bash command to get phases from plan.md:
 
@@ -98,14 +82,15 @@ Parse the output to get:
 
 Convert names to snake_case for folders (e.g., `project_setup`, `backend_api`).
 
-### 4b: Dispatch in Parallel
+### 3b: Dispatch Background Agents
 
-In a **SINGLE message**, dispatch N+1 Task tools:
+In a **SINGLE message**, dispatch N+1 Task tools with `run_in_background: true`:
 
-**DevOps (1 agent):**
+**DevOps (1 background agent):**
 ```
 Task tool:
   subagent_type: office:devops
+  run_in_background: true
   prompt: |
     # DevOps: Environment Setup
 
@@ -122,10 +107,11 @@ Task tool:
     Use the Edit tool to append your "## Environment Setup" section to `docs/office/plan.md`.
 ```
 
-**Team Lead per Phase (N agents):**
+**Team Lead per Phase (N background agents):**
 ```
 Task tool:
   subagent_type: office:team-lead
+  run_in_background: true
   prompt: |
     # Team Lead: Generate Implementation Spec for Phase {N}
 
@@ -189,43 +175,94 @@ Task tool:
     - File paths match the project structure from system design
 ```
 
-### 4c: Report Results
+### 3c: Wait for Completion (Context-Lean)
 
-After all agents complete, report status:
+**CRITICAL: Do NOT pull agent output into main context.**
+
+Each background agent returns a `task_id`. Wait for completion without retrieving verbose output:
+
+```
+For each agent task_id:
+  TaskOutput tool:
+    task_id: <agent_id>
+    block: true
+    timeout: 300000  # 5 minutes per agent
+```
+
+The TaskOutput result confirms completion but **do not store or process the detailed output**. The agents already wrote their files directly.
+
+### 3d: Verify Files (Not Agent Output)
+
+Check that spec files exist - don't read their contents:
+
+```bash
+# Count spec files
+ls spec/phase_*/spec.md 2>/dev/null | wc -l
+
+# Check DevOps section was added
+grep -q "## Environment Setup" docs/office/plan.md && echo "DevOps: OK" || echo "DevOps: MISSING"
+```
+
+### 3e: Handle Failures
+
+If any spec file is missing:
+
+1. **Identify which phase failed** by checking which `spec/phase_N_*/spec.md` doesn't exist
+2. **Retry ONLY the failed phase** - dispatch a single background agent for that phase
+3. **Do NOT re-read successful specs** - they're already on disk
+
+```
+# Retry example for failed Phase 2:
+Task tool:
+  subagent_type: office:team-lead
+  run_in_background: true
+  prompt: |
+    # RETRY: Generate Implementation Spec for Phase 2
+    [Same prompt as original, for the specific failed phase]
+```
+
+After retry, verify again with `ls`. If still failing after 2 retries, report error and continue with available specs.
+
+### 3f: Report Results
+
+Report status table (do NOT include file contents):
 
 ```markdown
 ## Spec Generation Results
 
 | Phase | Status | File |
 |-------|--------|------|
-| 1. Project Setup | ✓ Complete | spec/phase_1_project_setup/spec.md |
-| 2. Backend API | ✓ Complete | spec/phase_2_backend_api/spec.md |
-| 3. Frontend UI | ✓ Complete | spec/phase_3_frontend_ui/spec.md |
-| DevOps | ✓ Complete | docs/office/plan.md (env section) |
+| 1. Project Setup | ✓ | spec/phase_1_project_setup/spec.md |
+| 2. Backend API | ✓ | spec/phase_2_backend_api/spec.md |
+| 3. Frontend UI | ✓ | spec/phase_3_frontend_ui/spec.md |
+| DevOps | ✓ | docs/office/plan.md (env section) |
 ```
 
-If any phase failed, offer options:
-- Retry failed phase only
-- Continue with incomplete specs
-- Abort warroom
+## Step 4: Finalize
 
-## Step 5: Finalize
+### 4a: Final Validation
 
-### 5a: Validate Specs
-
-Verify all spec folders exist:
+Verify spec count matches phase count (already done in 3d, just confirm):
 
 ```bash
 ls spec/phase_*/spec.md | wc -l
 ```
 
-Should match phase count from Step 4a.
+### 4b: Update Session and Commit
 
-### 5b: Update Session and Commit
-
-1. Update `docs/office/session.yaml`: status → plan_complete
+1. Update `docs/office/session.yaml`: status → `plan_complete`
 2. Commit all artifacts:
    ```bash
    git add docs/office/ spec/ && git commit -m "docs(office): complete warroom phase with implementation specs"
    ```
 3. Say: "War Room complete! Run /build when ready."
+
+---
+
+## Context Management Summary
+
+This skill stays atomic (single session) by:
+- **Main context never reads design docs** - agents read files directly
+- **Steps 1-2**: Foreground agents (PM, Team Lead) - small output, acceptable in context
+- **Step 3**: Background agents for spec generation - output stays out of main context
+- **Step 4**: File existence checks only - never read spec contents into context

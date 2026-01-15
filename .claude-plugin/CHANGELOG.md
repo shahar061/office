@@ -2,6 +2,30 @@
 
 All notable changes to the Office plugin will be documented in this file.
 
+## [0.2.42] - 2026-01-15
+
+### Changed
+
+- **Warrooming context optimization**: Reduced main context usage to near-zero
+  - Removed Step 1 (context gathering) - agents now read files directly
+  - Agent prompts point to file paths instead of pasting content
+  - Main context never holds design document content
+  - Reduced from 5 steps to 4 steps
+
+- **Background agents as default**: Made background agents the robust, atomic approach
+  - All spec generation agents run with `run_in_background: true`
+  - Added "Wait for Completion (Context-Lean)" section - don't pull output back
+  - Added "Verify Files (Not Agent Output)" - check existence, don't read contents
+  - Added "Handle Failures" with automatic retry (max 2 attempts)
+  - Removed split-session fallback - skill is now fully atomic
+
+### Fixed
+
+- **Context overflow during /warrooming**: 127% context usage issue resolved
+  - Background agent output stays in separate context windows
+  - File verification uses `ls` and `grep -q`, never `cat` or `Read`
+  - Skill completes in single session without manual intervention
+
 ## [0.2.41] - 2026-01-15
 
 ### Added
