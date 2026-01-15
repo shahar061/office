@@ -2,6 +2,16 @@
 
 All notable changes to the Office plugin will be documented in this file.
 
+## [0.2.35] - 2026-01-15
+
+### Changed
+
+- **Follow superpowers naming pattern for skills**: Commands are concise stubs, skills have `-ing` suffix
+  - Commands: `imagine.md`, `build.md`, `warroom.md` (concise, with `disable-model-invocation: true`)
+  - Skills: `skills/imagining/`, `skills/building/`, `skills/warrooming/` (with `-ing` suffix)
+  - This ensures Skill tool loads SKILL.md content instead of command stub
+  - Pattern matches superpowers plugin (e.g., `brainstorm` command → `brainstorming` skill)
+
 ## [0.2.34] - 2026-01-15
 
 ### Changed

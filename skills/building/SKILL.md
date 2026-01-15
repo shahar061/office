@@ -1,5 +1,5 @@
 ---
-name: build
+name: building
 description: "Execute implementation plan with agent pool in isolated worktrees. Features run in parallel, agents pick tasks by domain."
 ---
 

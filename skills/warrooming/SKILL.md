@@ -1,5 +1,5 @@
 ---
-name: warroom
+name: warrooming
 description: "Use after /imagine completes to create an executable implementation plan (War Room phase)."
 ---
 

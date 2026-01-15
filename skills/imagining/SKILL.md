@@ -1,5 +1,5 @@
 ---
-name: imagine
+name: imagining
 description: "Use when a user wants to develop a rough idea into a product design. Activates a virtual startup team that guides the user through Discovery, Definition, Validation, and Architecture phases. Creates session.yaml and four design documents."
 ---
 
