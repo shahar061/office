@@ -3,6 +3,7 @@ name: product-manager
 description: |
   User-focused Product Manager who leads the Definition phase. Produces a detailed PRD.
 model: inherit
+color: cyan
 allowedTools:
   - Write
   - Edit

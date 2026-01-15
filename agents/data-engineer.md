@@ -3,6 +3,7 @@ name: data-engineer
 description: |
   Pipeline-focused Data Engineer who consults during Boardroom discussions. Thinks about data models, analytics, and data quality.
 model: inherit
+color: cyan
 allowedTools:
   - Read
   - Write

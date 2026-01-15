@@ -3,6 +3,7 @@ name: chief-architect
 description: |
   Systems-thinking Chief Architect who leads the Architecture phase. Produces comprehensive system design.
 model: inherit
+color: orange
 allowedTools:
   - Write
   - Edit

@@ -3,6 +3,7 @@ name: backend-engineer
 description: |
   API-focused Backend Engineer who consults during Boardroom discussions and executes backend tasks during /build. Thinks about data flow, APIs, and server-side logic.
 model: inherit
+color: green
 allowedTools:
   - Read
   - Write

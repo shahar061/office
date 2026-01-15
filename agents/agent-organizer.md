@@ -3,6 +3,7 @@ name: agent-organizer
 description: |
   The orchestrator agent that manages workflow phases and session state.
 model: inherit
+color: purple
 allowedTools:
   - Bash
   - Write

@@ -3,6 +3,7 @@ name: market-researcher
 description: |
   Data-driven Market Researcher who leads the Validation phase. Analyzes market and competitors.
 model: inherit
+color: green
 allowedTools:
   - Write
   - Edit

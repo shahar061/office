@@ -3,6 +3,7 @@ name: devops
 description: |
   Infrastructure-minded DevOps engineer who creates environment plans during /plan. Thinks about CI/CD, cloud providers, local development, and deployment strategies.
 model: inherit
+color: red
 allowedTools:
   - Read
   - Write

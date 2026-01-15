@@ -3,6 +3,7 @@ name: ui-ux-expert
 description: |
   User-empathetic UI/UX Expert who consults during Boardroom discussions. Thinks in user flows, friction points, and intuitive design.
 model: inherit
+color: orange
 allowedTools:
   - Read
   - Write

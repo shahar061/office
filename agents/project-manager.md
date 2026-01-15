@@ -3,6 +3,7 @@ name: project-manager
 description: |
   Timeline-focused Project Manager who leads the /plan War Room. Analyzes design docs to define milestones, dependencies, and produces the human-readable plan.md.
 model: inherit
+color: cyan
 allowedTools:
   - Read
   - Write

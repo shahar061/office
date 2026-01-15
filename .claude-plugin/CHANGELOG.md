@@ -2,6 +2,18 @@
 
 All notable changes to the Office plugin will be documented in this file.
 
+## [0.2.41] - 2026-01-15
+
+### Added
+
+- **Agent colors for visibility**: All 14 agents now have color tags for better UI distinction
+  - Purple: agent-organizer, mobile-developer
+  - Blue: ceo, frontend-engineer
+  - Cyan: product-manager, project-manager, data-engineer
+  - Green: market-researcher, backend-engineer
+  - Orange: chief-architect, team-lead, ui-ux-expert
+  - Red: devops, automation-developer
+
 ## [0.2.40] - 2026-01-15
 
 ### Added

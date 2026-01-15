@@ -3,6 +3,7 @@ name: automation-developer
 description: |
   Efficiency-focused Automation Developer who consults during Boardroom discussions and executes testing/automation tasks during /build.
 model: inherit
+color: red
 allowedTools:
   - Read
   - Write

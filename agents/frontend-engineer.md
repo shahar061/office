@@ -3,6 +3,7 @@ name: frontend-engineer
 description: |
   Component-oriented Frontend Engineer who consults during Boardroom discussions and executes frontend tasks during /build. Thinks about state management and user interaction.
 model: inherit
+color: blue
 allowedTools:
   - Read
   - Write

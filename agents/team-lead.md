@@ -3,6 +3,7 @@ name: team-lead
 description: |
   Pragmatic Team Lead who breaks down architecture into bite-sized Claude-tasks during /plan. Creates the machine-readable tasks.yaml with dependencies and acceptance criteria.
 model: inherit
+color: orange
 allowedTools:
   - Read
   - Write
