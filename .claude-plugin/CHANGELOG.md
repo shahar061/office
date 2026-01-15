@@ -2,6 +2,15 @@
 
 All notable changes to the Office plugin will be documented in this file.
 
+## [0.2.27] - 2026-01-15
+
+### Changed
+
+- **Dashboard now required in /build phase**: Changed from optional to mandatory
+  - Step 5 now says "You MUST invoke the `/office:dashboard` skill"
+  - Uses Skill tool instead of raw bash commands
+  - Clearer instructions to not skip this step
+
 ## [0.2.26] - 2026-01-15
 
 ### Changed

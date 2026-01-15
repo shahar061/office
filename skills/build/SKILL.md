@@ -58,33 +58,24 @@ build:
 features: []  # Populated as features start
 ```
 
-### 5. Start Dashboard (Optional)
+### 5. Start Dashboard (Required)
 
-Attempt to start the dashboard for real-time visibility:
+**You MUST invoke the `/office:dashboard` skill to start the build dashboard.**
 
-```bash
-# Check if Python available
-if command -v python3 &> /dev/null; then
-    # Run setup if needed
-    if [ ! -d "dashboard/.venv" ]; then
-        cd dashboard && ./setup.sh && cd ..
-    fi
+The dashboard provides real-time visibility into build progress. It reads from `build-state.yaml` and `tasks.yaml`.
 
-    # Start dashboard in background
-    cd dashboard
-    source .venv/bin/activate
-    python server.py &
-    DASHBOARD_PID=$!
-    cd ..
-
-    echo "Dashboard running at http://localhost:5050"
-else
-    echo "Note: Python not found. Dashboard unavailable."
-    echo "Build will continue without real-time visualization."
-fi
+**Invoke the dashboard skill:**
+```
+Use the Skill tool: skill: "office:dashboard"
 ```
 
-**Graceful degradation:** If dashboard fails to start, continue build without it. The dashboard is optional visibility, not a blocker.
+The skill will:
+1. Find the dashboard server in the plugin cache
+2. Set up the Python environment if needed
+3. Start the server pointing to `docs/office/`
+4. Report the URL (typically http://localhost:5050)
+
+**Do NOT skip this step.** The dashboard is essential for monitoring parallel agent execution.
 
 ## Main Loop
 
@@ -273,13 +264,10 @@ When all features complete:
 
 ### Stop Dashboard
 
-If dashboard was started:
+Stop the dashboard server:
 
 ```bash
-if [ -n "$DASHBOARD_PID" ]; then
-    kill $DASHBOARD_PID 2>/dev/null
-    echo "Dashboard stopped."
-fi
+pkill -f "server.py.*office" 2>/dev/null && echo "Dashboard stopped." || echo "Dashboard was not running."
 ```
 
 ### State Update
