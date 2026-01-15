@@ -2,6 +2,16 @@
 
 All notable changes to the Office plugin will be documented in this file.
 
+## [0.2.28] - 2026-01-15
+
+### Changed
+
+- **Refactored /plan skill for progressive disclosure**: Split 313-line SKILL.md into lean structure
+  - `SKILL.md` now 84 lines with overview and quick steps
+  - `war-room-process.md` contains detailed step-by-step instructions
+  - `output-formats.md` contains file format specifications
+  - Fixes skill loading issue where content wasn't appearing
+
 ## [0.2.27] - 2026-01-15
 
 ### Changed
