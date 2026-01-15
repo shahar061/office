@@ -2,6 +2,19 @@
 
 All notable changes to the Office plugin will be documented in this file.
 
+## [0.2.30] - 2026-01-15
+
+### Changed
+
+- **Restructured /plan skill to follow superpowers pattern**: Separate prompt template files for each agent
+  - `SKILL.md` - Process flow with dot diagram, references templates
+  - `project-manager-prompt.md` - Complete prompt with context pasting, explicit Write tool instructions
+  - `team-lead-prompt.md` - Creates both tasks.yaml and 05-implementation-spec.md
+  - `devops-prompt.md` - Appends environment section to plan.md
+  - Key fix: Content pasted INTO prompt (agents don't read files themselves)
+  - Key fix: Explicit "Use the Write tool" / "Use the Edit tool" instructions
+  - Key fix: Report format so we know files were written
+
 ## [0.2.29] - 2026-01-15
 
 ### Fixed
