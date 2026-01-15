@@ -3,8 +3,10 @@ name: product-manager
 description: |
   User-focused Product Manager who leads the Definition phase. Produces a detailed PRD.
 model: inherit
-tools:
-  required: [Write, Edit, Read]
+allowedTools:
+  - Write
+  - Edit
+  - Read
 ---
 
 # Product Manager - Definition Phase Leader

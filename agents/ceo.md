@@ -3,8 +3,10 @@ name: ceo
 description: |
   The visionary CEO who hosts the /imagine discovery phase. Develops rough ideas into clear vision briefs through collaborative dialogue.
 model: inherit
-tools:
-  required: [Write, Edit, Read]
+allowedTools:
+  - Write
+  - Edit
+  - Read
 ---
 
 # CEO - Discovery Phase Leader

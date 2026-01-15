@@ -9,8 +9,6 @@ Transform design documents into an executable implementation plan.
 
 **Announce at start:** "I'm using the warrooming skill to create the implementation plan."
 
-**Important:** Subagents are ADVISORS - they return content. YOU write the files.
-
 ## Prerequisites
 
 Check `docs/office/session.yaml`:
@@ -28,9 +26,9 @@ From 04-system-design.md: Technology Stack table, Components list
 
 Do NOT pass full documents to agents - only relevant sections.
 
-## Step 2: Consult Project Manager
+## Step 2: Project Manager Creates Plan
 
-PM creates the phased implementation plan.
+PM creates the phased implementation plan and writes it directly.
 
 **Dispatch with LEAN context:**
 ```
@@ -38,8 +36,6 @@ Task tool:
   subagent_type: office:project-manager
   prompt: |
     # Project Manager: Create Implementation Plan
-
-    **Your role:** ADVISOR - return content, don't write files.
 
     ## Key Context
 
@@ -57,88 +53,57 @@ Task tool:
     Create a phased implementation plan (4-6 phases).
     Each phase needs: Goal, Milestone, Dependencies, Key Tasks.
 
-    ## Output
-
-    Return between markers:
-    PLAN_CONTENT_START
-    [Your plan.md content]
-    PLAN_CONTENT_END
+    Write the plan to `docs/office/plan.md` using the Write tool.
 ```
 
-**After agent returns:** Write to `docs/office/plan.md`
+## Step 3 & 4: Team Lead and DevOps (Parallel)
 
-## Step 3: Consult Team Lead
+**Run these TWO agents in parallel** - dispatch both in a SINGLE message with multiple Task tool calls.
 
-Team Lead breaks plan into executable tasks.
+Both depend on Step 2 (plan.md must exist).
 
-**Dispatch with LEAN context:**
+### Step 3: Team Lead Creates Tasks
+
 ```
 Task tool:
   subagent_type: office:team-lead
   prompt: |
     # Team Lead: Create Task Breakdown
 
-    **Your role:** ADVISOR - return content, don't write files.
-
     ## Context
 
-    ### Implementation Plan
-    [Paste: The plan.md just created]
-
-    ### User Stories Reference
-    [Paste: User Stories section from PRD]
+    Read the implementation plan from `docs/office/plan.md`.
+    Read the User Stories from `docs/office/02-prd.md`.
 
     ## Task
 
-    Create tasks.yaml with 20-30 tasks (not 50).
+    Create tasks.yaml with as many tasks as needed to fully implement the plan.
     Each task: id, description, assigned_agent, dependencies, acceptance_criteria.
     Keep it focused - no TDD steps here.
 
-    ## Output
-
-    Return between markers:
-    TASKS_YAML_START
-    [Your tasks.yaml content]
-    TASKS_YAML_END
+    Write to `docs/office/tasks.yaml` using the Write tool.
 ```
 
-**After agent returns:** Write to `docs/office/tasks.yaml`
+### Step 4: DevOps Adds Environment Setup
 
-## Step 4: Consult DevOps
-
-DevOps adds environment setup.
-
-**Dispatch with LEAN context:**
 ```
 Task tool:
   subagent_type: office:devops
   prompt: |
     # DevOps: Environment Setup
 
-    **Your role:** ADVISOR - return content, don't write files.
-
     ## Context
 
-    ### Tech Stack
-    [Paste: Technology Stack table from system design]
-
-    ### Infrastructure
-    [Paste: Deployment section from system design]
+    Read the tech stack from `docs/office/04-system-design.md`.
+    Read the current plan from `docs/office/plan.md`.
 
     ## Task
 
-    Create environment setup section: Prerequisites, Local Setup, Env Vars, CI/CD, Deployment.
-    Be specific to the tech stack above.
+    Add an environment setup section to the plan: Prerequisites, Local Setup, Env Vars, CI/CD, Deployment.
+    Be specific to the tech stack.
 
-    ## Output
-
-    Return between markers:
-    ENV_SECTION_START
-    [Your environment section - starts with ## Environment Setup]
-    ENV_SECTION_END
+    Use the Edit tool to append your "## Environment Setup" section to `docs/office/plan.md`.
 ```
-
-**After agent returns:** Append to `docs/office/plan.md`
 
 ## Step 5: Finalize
 

@@ -3,8 +3,10 @@ name: chief-architect
 description: |
   Systems-thinking Chief Architect who leads the Architecture phase. Produces comprehensive system design.
 model: inherit
-tools:
-  required: [Write, Edit, Read]
+allowedTools:
+  - Write
+  - Edit
+  - Read
 ---
 
 # Chief Architect - Architecture Phase Leader
