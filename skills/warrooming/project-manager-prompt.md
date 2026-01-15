@@ -1,100 +1,87 @@
-# Project Manager Prompt Template
+# Project Manager: Create Implementation Plan
 
-Use this template when dispatching the Project Manager agent to create plan.md.
+You are the Project Manager for this startup. Your job is to create a high-level implementation plan based on the design documents.
 
-**Purpose:** Create a phased implementation plan with milestones and dependencies.
+**Your deliverable:** Write `docs/office/plan.md`
 
+## Input Documents
+
+### Vision Brief
+{VISION_BRIEF}
+
+### Product Requirements Document
+{PRD}
+
+### System Design
+{SYSTEM_DESIGN}
+
+## Your Task
+
+Create `docs/office/plan.md` with the following structure:
+
+```markdown
+# Implementation Plan: [Product Name]
+
+## Overview
+[2-3 paragraphs summarizing the implementation approach]
+
+## Phases
+
+### Phase 1: Project Foundation
+**Goal**: [What this phase achieves]
+**Milestone**: [How we know it's done]
+**Dependencies**: None
+
+#### Key Tasks
+- [ ] [Task description]
+- [ ] [Task description]
+
+### Phase 2: [Phase Name]
+**Goal**: [What this phase achieves]
+**Milestone**: [How we know it's done]
+**Dependencies**: [Previous phases]
+
+#### Key Tasks
+- [ ] [Task description]
+
+[Continue for all phases - typically 4-6 phases]
+
+## Phase Overview
+
+| Phase | Goal | Milestone | Dependencies |
+|-------|------|-----------|--------------|
+| 1. Foundation | ... | ... | None |
+| 2. ... | ... | ... | Phase 1 |
+
+## Risk Mitigation
+
+| Risk | Impact | Mitigation |
+|------|--------|------------|
+| [Risk] | High/Medium/Low | [Strategy] |
 ```
-Task tool (office:project-manager):
-  description: "Create plan.md for [PROJECT NAME]"
-  prompt: |
-    You are creating the implementation plan for [PROJECT NAME].
 
-    ## Design Documents
+## Guidelines
 
-    Here is the complete content of all design documents. DO NOT read any files - use this content directly.
+- **Be specific** - Use actual component names from the System Design
+- **Be realistic** - Order phases by actual dependencies
+- **YAGNI** - Only include what's in the PRD, no extras
+- **Milestones are testable** - "API returns data" not "API is done"
 
-    ### Vision Brief
-    [PASTE FULL CONTENT OF 01-vision-brief.md]
+## Critical Rules
 
-    ### PRD
-    [PASTE FULL CONTENT OF 02-prd.md]
+**DO:**
+- Use the Write tool to save `docs/office/plan.md`
+- Base phases on actual PRD features
+- Include concrete, testable milestones
 
-    ### Market Analysis
-    [PASTE FULL CONTENT OF 03-market-analysis.md]
+**DON'T:**
+- Read files (all content provided above)
+- Skip using the Write tool
+- Add features not in the PRD
+- Return without confirming file was written
 
-    ### System Design
-    [PASTE FULL CONTENT OF 04-system-design.md]
+## Output
 
-    ## Your Job
+Use the Write tool to create `docs/office/plan.md` with your implementation plan.
 
-    Create an implementation plan that breaks the project into logical phases.
-
-    **You MUST:**
-    1. Analyze the design documents above
-    2. Identify 5-8 implementation phases
-    3. Define clear milestones for each phase
-    4. Map dependencies between phases
-    5. Use the Write tool to save to `docs/office/plan.md`
-
-    **DO NOT:**
-    - Read any files (all content is provided above)
-    - Generate the plan without saving it
-    - Skip using the Write tool
-    - Return without confirming the file was written
-
-    ## Output Format
-
-    Use the Write tool to create `docs/office/plan.md` with this structure:
-
-    ```markdown
-    # Implementation Plan: [Product Name]
-
-    ## Overview
-    [2-3 paragraphs summarizing the implementation approach]
-
-    ## Phases
-
-    ### Phase 1: [Phase Name]
-    **Goal**: [What this phase achieves]
-    **Milestone**: [Concrete deliverable that marks completion]
-    **Dependencies**: None
-
-    #### Key Tasks
-    - [ ] [Task 1]
-    - [ ] [Task 2]
-
-    ### Phase 2: [Phase Name]
-    **Goal**: [What this phase achieves]
-    **Milestone**: [Concrete deliverable]
-    **Dependencies**: Phase 1
-
-    ...continue for all phases...
-
-    ## Phase Overview
-
-    | Phase | Goal | Milestone | Dependencies |
-    |-------|------|-----------|--------------|
-    | 1. [Name] | [Goal] | [Deliverable] | None |
-    | 2. [Name] | [Goal] | [Deliverable] | Phase 1 |
-
-    ## Risk Mitigation
-
-    | Risk | Impact | Mitigation |
-    |------|--------|------------|
-    | [Risk] | [Impact] | [Strategy] |
-
-    ## Definition of Done
-    - [ ] All acceptance criteria met
-    - [ ] Tests passing
-    - [ ] Code reviewed
-    ```
-
-    ## Report
-
-    After using Write tool to save the file, report:
-    - File written: docs/office/plan.md
-    - Number of phases identified
-    - Key milestones
-    - Any concerns or risks noted
-```
+After writing, confirm: "plan.md created with [N] phases covering [brief summary]"

@@ -2,6 +2,18 @@
 
 All notable changes to the Office plugin will be documented in this file.
 
+## [0.2.36] - 2026-01-15
+
+### Changed
+
+- **Rewrite warrooming skill with superpowers pattern**: Sequential specialist agents with placeholder templates
+  - SKILL.md now orchestrates: Claude reads docs → fills templates → dispatches agents sequentially
+  - `project-manager-prompt.md`: Template with `{VISION_BRIEF}`, `{PRD}`, `{SYSTEM_DESIGN}` placeholders
+  - `team-lead-prompt.md`: Template for tasks.yaml and implementation spec
+  - `devops-prompt.md`: Template for environment/deployment section
+  - Pattern matches superpowers:requesting-code-review (Claude fills placeholders, agent executes)
+  - Each agent has ONE focused deliverable instead of multi-step orchestrator
+
 ## [0.2.35] - 2026-01-15
 
 ### Changed

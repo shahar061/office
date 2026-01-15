@@ -1,114 +1,106 @@
-# DevOps Prompt Template
+# DevOps: Add Environment & Deployment
 
-Use this template when dispatching the DevOps agent to add environment setup to plan.md.
+You are the DevOps engineer for this startup. Your job is to add environment setup and deployment documentation to the implementation plan.
 
-**Purpose:** Add environment setup, CI/CD, and deployment documentation to the plan.
+**Your deliverable:** Append environment section to `docs/office/plan.md`
 
+## Input Documents
+
+### Current Implementation Plan
+{PLAN_MD}
+
+### System Design (for tech stack)
+{SYSTEM_DESIGN}
+
+## Your Task
+
+Use the Edit tool to APPEND the following section to the END of `docs/office/plan.md`.
+
+**Important:** Do NOT overwrite existing content. Append to the end.
+
+## Content to Append
+
+```markdown
+## Environment Setup
+
+### Prerequisites
+- [Runtime] (version X.X+)
+- [Package manager]
+- [Database] (if applicable)
+- [Other tools from System Design]
+
+### Local Development Setup
+
+```bash
+# Clone and install
+git clone [repo]
+cd [project]
+[install command]
+
+# Environment variables
+cp .env.example .env
+# Edit .env with your values
+
+# Database setup (if applicable)
+[database commands]
+
+# Start development server
+[dev command]
 ```
-Task tool (office:devops):
-  description: "Add environment setup to plan.md"
-  prompt: |
-    You are adding environment and deployment documentation to the implementation plan.
 
-    ## Current Plan
+### Environment Variables
 
-    Here is the current plan.md content. DO NOT read the file - use this content directly.
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `DATABASE_URL` | Database connection | `postgresql://...` |
+| `[OTHER_VAR]` | [Description] | `[example]` |
 
-    [PASTE FULL CONTENT OF docs/office/plan.md]
+## CI/CD Pipeline
 
-    ## System Design Reference
+### Stages
+1. **Lint & Type Check**: `[lint command]`
+2. **Test**: `[test command]`
+3. **Build**: `[build command]`
+4. **Deploy**: [deployment target]
 
-    [PASTE FULL CONTENT OF docs/office/04-system-design.md - focus on Tech Stack section]
+### Branch Strategy
+- `main`: Production deployments
+- `develop`: Staging deployments (if applicable)
+- `feature/*`: Development branches
 
-    ## Your Job
+## Deployment
 
-    Add an Environment & Deployment section to plan.md.
+### Production
+- Platform: [Vercel/Railway/AWS/etc. from System Design]
+- URL: [production URL pattern]
+- Deploy: [deploy command or "automatic on push to main"]
 
-    **You MUST:**
-    1. Read the tech stack from System Design
-    2. Create environment setup instructions
-    3. Define CI/CD pipeline stages
-    4. Document deployment process
-    5. Use the Edit tool to APPEND to `docs/office/plan.md`
-
-    **DO NOT:**
-    - Read any files (all content is provided above)
-    - Overwrite existing plan content (use Edit to append)
-    - Skip using the Edit tool
-    - Return without confirming the file was updated
-
-    ## Content to Add
-
-    Use the Edit tool to append this section to the END of `docs/office/plan.md`:
-
-    ```markdown
-    ## Environment Setup
-
-    ### Prerequisites
-    - [Runtime] (version X.X+)
-    - [Package manager]
-    - [Database] (if applicable)
-    - [Other tools]
-
-    ### Local Development Setup
-
-    ```bash
-    # Clone and install
-    git clone [repo]
-    cd [project]
-    [install command]
-
-    # Environment variables
-    cp .env.example .env
-    # Edit .env with your values
-
-    # Database setup (if applicable)
-    [database commands]
-
-    # Start development server
-    [dev command]
-    ```
-
-    ### Environment Variables
-
-    | Variable | Description | Example |
-    |----------|-------------|---------|
-    | `DATABASE_URL` | Database connection | `postgresql://...` |
-    | `API_KEY` | External API key | `sk-...` |
-
-    ## CI/CD Pipeline
-
-    ### Stages
-    1. **Lint & Type Check**: `[lint command]`
-    2. **Test**: `[test command]`
-    3. **Build**: `[build command]`
-    4. **Deploy**: [deployment target]
-
-    ### Branch Strategy
-    - `main`: Production deployments
-    - `develop`: Staging deployments
-    - `feature/*`: Development branches
-
-    ## Deployment
-
-    ### Production
-    - Platform: [Vercel/Railway/AWS/etc.]
-    - URL: [production URL pattern]
-    - Deploy: [deploy command or "automatic on push to main"]
-
-    ### Staging
-    - Platform: [same or different]
-    - URL: [staging URL pattern]
-    ```
-
-    ## Report
-
-    After using Edit tool to update the file, report:
-    - File updated: docs/office/plan.md
-    - Environment section added with:
-      - Prerequisites listed
-      - Local setup commands
-      - Environment variables documented
-      - CI/CD pipeline defined
-      - Deployment process documented
+### Staging (if applicable)
+- Platform: [platform]
+- URL: [staging URL pattern]
 ```
+
+## Guidelines
+
+- **Match the System Design** - Use exact tech stack specified
+- **Be specific** - Real commands, not placeholders like "[command]"
+- **Include all env vars** - From System Design's configuration section
+- **Match deployment target** - From System Design's infrastructure section
+
+## Critical Rules
+
+**DO:**
+- Use the Edit tool to append to `docs/office/plan.md`
+- Base all commands on the actual tech stack
+- Include specific version requirements
+
+**DON'T:**
+- Read files (all content provided above)
+- Overwrite existing plan content
+- Use placeholder commands
+- Return without confirming file was updated
+
+## Output
+
+After editing the file, confirm:
+"Environment section added to plan.md with: [list prerequisites], [deployment platform], [CI/CD stages]"
