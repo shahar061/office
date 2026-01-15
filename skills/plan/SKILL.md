@@ -1,128 +1,225 @@
 ---
 name: plan
-description: "Use after /imagine completes to create an executable implementation plan. The War Room agents (Project Manager, Team Lead, DevOps) work automatically to produce plan.md, tasks.yaml, 05-implementation-spec.md."
+description: "Use after /imagine completes to create an executable implementation plan."
 ---
 
 # /plan - Create Executable Implementation Plan
 
-## Overview
-
-The `/plan` skill takes design documents from `/imagine` and produces an executable implementation plan through automated agent collaboration.
-
-**Announce at start:** "I'm using the /plan skill to create an implementation plan."
+**Announce:** "I'm using the /plan skill to create an implementation plan."
 
 ## Prerequisites
 
-Requires completed `/imagine` session with:
+Requires `docs/office/session.yaml` with `status: imagine_complete` and these documents:
 - `docs/office/01-vision-brief.md`
 - `docs/office/02-prd.md`
 - `docs/office/03-market-analysis.md`
 - `docs/office/04-system-design.md`
-- `docs/office/session.yaml` with `status: imagine_complete`
 
-## The Process
+## Execution Steps
 
-```dot
-digraph plan_process {
-    rankdir=TB;
-
-    "Step 1: Validate session" [shape=box];
-    "Valid?" [shape=diamond];
-    "Stop - run /imagine first" [shape=box];
-    "Step 2: Read all design docs" [shape=box];
-    "Step 3: Spawn PM agent (./project-manager-prompt.md)" [shape=box];
-    "PM complete?" [shape=diamond];
-    "Wait for PM" [shape=box];
-    "Step 4: Spawn Team Lead + DevOps in parallel" [shape=box];
-    "Both complete?" [shape=diamond];
-    "Wait" [shape=box];
-    "Step 5: Validate outputs" [shape=box];
-    "Step 6: Update session.yaml" [shape=box];
-    "Step 7: Present for review" [shape=box];
-
-    "Step 1: Validate session" -> "Valid?";
-    "Valid?" -> "Stop - run /imagine first" [label="no"];
-    "Valid?" -> "Step 2: Read all design docs" [label="yes"];
-    "Step 2: Read all design docs" -> "Step 3: Spawn PM agent (./project-manager-prompt.md)";
-    "Step 3: Spawn PM agent (./project-manager-prompt.md)" -> "PM complete?";
-    "PM complete?" -> "Wait for PM" [label="no"];
-    "Wait for PM" -> "PM complete?";
-    "PM complete?" -> "Step 4: Spawn Team Lead + DevOps in parallel" [label="yes"];
-    "Step 4: Spawn Team Lead + DevOps in parallel" -> "Both complete?";
-    "Both complete?" -> "Wait" [label="no"];
-    "Wait" -> "Both complete?";
-    "Both complete?" -> "Step 5: Validate outputs" [label="yes"];
-    "Step 5: Validate outputs" -> "Step 6: Update session.yaml";
-    "Step 6: Update session.yaml" -> "Step 7: Present for review";
-}
-```
-
-## Step-by-Step Execution
-
-### Step 1: Validate Session
-Read `docs/office/session.yaml`:
-- If `status != imagine_complete`: Stop. Say "Run /imagine first to create design documents."
-- If any design document missing: Stop. Say "Missing [document]. Run /imagine to complete design."
-- If valid: Proceed to Step 2.
+### Step 1: Validate
+Read `docs/office/session.yaml`. If status is not `imagine_complete`, stop and say "Run /imagine first."
 
 ### Step 2: Read All Design Documents
-Read all 4 documents and keep their content for the agent prompts:
-- `docs/office/01-vision-brief.md`
-- `docs/office/02-prd.md`
-- `docs/office/03-market-analysis.md`
-- `docs/office/04-system-design.md`
+Read ALL 4 design documents now. Store their complete content - you will paste it into agent prompts.
 
-You will paste this content into the agent prompts (agents should NOT read files themselves).
+### Step 3: Spawn Project Manager (WAIT FOR COMPLETION)
 
-### Step 3: Spawn Project Manager Agent
-Dispatch the Project Manager using the template in `./project-manager-prompt.md`.
+**CRITICAL: Do NOT proceed to Step 4 until this agent completes and confirms the file was written.**
 
-**CRITICAL:** Wait for this agent to complete and confirm plan.md was written before proceeding.
+Call the Task tool with EXACTLY these parameters:
 
-### Step 4: Spawn Team Lead + DevOps (Parallel)
-**IMPORTANT:** Dispatch BOTH agents in a SINGLE message (parallel execution).
+```
+subagent_type: "office:project-manager"
+description: "Create plan.md for [PROJECT NAME]"
+prompt: |
+  You are creating the implementation plan.
 
-Use templates:
-- `./team-lead-prompt.md`
-- `./devops-prompt.md`
+  ## Design Documents
 
-Wait for BOTH to complete before proceeding.
+  [PASTE THE FULL CONTENT OF ALL 4 DESIGN DOCUMENTS HERE]
 
-### Step 5: Validate Outputs
-Verify all files were created:
-```bash
-ls docs/office/plan.md docs/office/tasks.yaml docs/office/05-implementation-spec.md
+  ## Your Job
+
+  1. Analyze the design documents above
+  2. Identify 5-8 implementation phases
+  3. Define clear milestones for each phase
+  4. **Use the Write tool to save to `docs/office/plan.md`**
+
+  **YOU MUST USE THE WRITE TOOL. DO NOT just generate content.**
+
+  ## Output Format
+
+  Use Write tool to create `docs/office/plan.md`:
+
+  # Implementation Plan: [Product Name]
+
+  ## Overview
+  [2-3 paragraphs]
+
+  ## Phases
+
+  ### Phase 1: [Name]
+  **Goal**: [What this achieves]
+  **Milestone**: [Deliverable]
+  **Dependencies**: None
+
+  #### Key Tasks
+  - [ ] Task 1
+  - [ ] Task 2
+
+  ### Phase 2: [Name]
+  ...continue for all phases...
+
+  ## Phase Overview
+  | Phase | Goal | Milestone | Dependencies |
+  |-------|------|-----------|--------------|
+
+  ## Risk Mitigation
+  | Risk | Impact | Mitigation |
+
+  ## Report
+  After writing the file, say: "File written: docs/office/plan.md" and list the phases.
 ```
 
-Validate YAML syntax:
+**WAIT for this agent to return before proceeding.**
+
+### Step 4: Spawn Team Lead + DevOps (PARALLEL)
+
+**IMPORTANT: Call BOTH Task tools in a SINGLE message.**
+
+First, read `docs/office/plan.md` that was just created. Then spawn both agents:
+
+#### Agent 1: Team Lead
+
+```
+subagent_type: "office:team-lead"
+description: "Create tasks.yaml and implementation spec"
+prompt: |
+  You are breaking down the implementation plan into tasks.
+
+  ## Plan Content
+  [PASTE THE FULL CONTENT OF docs/office/plan.md HERE]
+
+  ## System Design
+  [PASTE THE FULL CONTENT OF docs/office/04-system-design.md HERE]
+
+  ## Your Job
+
+  Create TWO files using the Write tool:
+  1. `docs/office/tasks.yaml`
+  2. `docs/office/05-implementation-spec.md`
+
+  **YOU MUST USE THE WRITE TOOL FOR BOTH FILES.**
+
+  ## tasks.yaml Format
+
+  ```yaml
+  version: "1.0"
+  project: "[Name]"
+  features:
+    - id: "feature-1"
+      name: "[Feature]"
+      phase: 1
+      tasks:
+        - id: "task-001"
+          description: "[Task]"
+          assigned_agent: "backend_engineer"
+          dependencies: []
+          acceptance_criteria:
+            - "[Criterion]"
+  ```
+
+  ## 05-implementation-spec.md Format
+
+  # Implementation Specification
+
+  ## Task task-001: [Title]
+  **Files:** Create: `src/path/file.ts`, Test: `tests/path/test.ts`
+  **Step 1:** Write failing test
+  **Step 2:** Implement
+  **Step 3:** Verify
+  **Step 4:** Commit
+
+  ## Report
+  Say: "Files written: tasks.yaml, 05-implementation-spec.md" and list task count.
+```
+
+#### Agent 2: DevOps
+
+```
+subagent_type: "office:devops"
+description: "Add environment setup to plan.md"
+prompt: |
+  You are adding environment documentation to the plan.
+
+  ## Current Plan
+  [PASTE THE FULL CONTENT OF docs/office/plan.md HERE]
+
+  ## System Design (Tech Stack)
+  [PASTE THE TECH STACK SECTION FROM 04-system-design.md HERE]
+
+  ## Your Job
+
+  **Use the Edit tool to APPEND to `docs/office/plan.md`**
+
+  Add this section at the END of the file:
+
+  ## Environment Setup
+
+  ### Prerequisites
+  - [Runtime] (version)
+  - [Package manager]
+  - [Database]
+
+  ### Local Development
+  ```bash
+  git clone [repo]
+  cd [project]
+  [install command]
+  cp .env.example .env
+  [dev command]
+  ```
+
+  ### Environment Variables
+  | Variable | Description | Example |
+
+  ## CI/CD Pipeline
+  1. Lint & Type Check
+  2. Test
+  3. Build
+  4. Deploy
+
+  ## Deployment
+  - Platform: [Vercel/etc]
+  - Production URL: [pattern]
+
+  ## Report
+  Say: "File updated: plan.md with environment section"
+```
+
+**WAIT for BOTH agents to complete.**
+
+### Step 5: Validate Outputs
+
+Run these commands:
 ```bash
+ls docs/office/plan.md docs/office/tasks.yaml docs/office/05-implementation-spec.md
 python3 -c "import yaml; yaml.safe_load(open('docs/office/tasks.yaml')); print('Valid YAML')"
 ```
 
-### Step 6: Update session.yaml
-Update `docs/office/session.yaml`:
-```yaml
-status: plan_complete
-current_phase: plan_complete
-```
+### Step 6: Update Session
 
-### Step 7: Present for Review
-Show summary of created artifacts and say: "Plan complete! Review the artifacts, then /build when ready."
+Update `docs/office/session.yaml` to `status: plan_complete`.
 
-## Prompt Templates
+### Step 7: Present Summary
 
-- `./project-manager-prompt.md` - Creates plan.md
-- `./team-lead-prompt.md` - Creates tasks.yaml and 05-implementation-spec.md
-- `./devops-prompt.md` - Adds environment section to plan.md
+Show what was created and say: "Plan complete! Review the artifacts, then /build when ready."
 
 ## Red Flags
 
 **NEVER:**
-- Spawn all 3 agents at once (PM must complete first)
-- Let agents read design docs themselves (paste content in prompt)
-- Proceed if an agent returns without writing files
-- Skip YAML validation
-
-**If agent returns with 0 tool uses:**
-- The prompt was not explicit enough
-- Re-dispatch with clearer instructions to use Write tool
+- Spawn all 3 agents at once (PM must complete FIRST)
+- Let agents read files (paste content INTO the prompt)
+- Proceed if agent returns without confirming file was written
+- Skip the YAML validation

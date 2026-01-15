@@ -2,6 +2,17 @@
 
 All notable changes to the Office plugin will be documented in this file.
 
+## [0.2.31] - 2026-01-15
+
+### Changed
+
+- **Inlined all prompts directly in SKILL.md**: Removed external template files that Claude couldn't locate
+  - Full prompt content for PM, Team Lead, DevOps now inline in skill
+  - Explicit "Call the Task tool with EXACTLY these parameters" format
+  - Clear placeholders: [PASTE THE FULL CONTENT OF ... HERE]
+  - Explicit "YOU MUST USE THE WRITE TOOL" instructions
+  - Report format for each agent to confirm file was written
+
 ## [0.2.30] - 2026-01-15
 
 ### Changed
