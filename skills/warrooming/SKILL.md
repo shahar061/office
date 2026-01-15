@@ -9,6 +9,8 @@ Transform design documents into an executable implementation plan using your vir
 
 **Announce at start:** "I'm using the warrooming skill to create the implementation plan."
 
+**Important:** Subagents are ADVISORS - they analyze and return content. YOU (Claude) write the files.
+
 ## Prerequisites
 
 Check `docs/office/session.yaml`:
@@ -17,7 +19,7 @@ Check `docs/office/session.yaml`:
 
 ## Step 1: Gather Context
 
-Read all design documents and store their contents:
+Read all design documents:
 
 ```bash
 cat docs/office/01-vision-brief.md
@@ -26,72 +28,97 @@ cat docs/office/03-market-analysis.md
 cat docs/office/04-system-design.md
 ```
 
-You'll use these to fill placeholders in the agent templates.
+Store contents for filling agent templates.
 
-## Step 2: Dispatch Project Manager
+## Step 2: Consult Project Manager
 
-The PM creates the high-level implementation plan.
+The PM analyzes docs and returns the plan content.
 
 **Fill the template** at `project-manager-prompt.md` with:
 - `{VISION_BRIEF}` - Contents of 01-vision-brief.md
 - `{PRD}` - Contents of 02-prd.md
 - `{SYSTEM_DESIGN}` - Contents of 04-system-design.md
 
-**Dispatch agent:**
+**Dispatch advisor:**
 ```
 Task tool:
   subagent_type: office:project-manager
-  prompt: [filled template from project-manager-prompt.md]
+  prompt: [filled template]
 ```
 
-**Verify output:**
+**After agent returns:** Extract the plan content from the agent's response and use the Write tool to save it:
+
+```
+Write tool:
+  file_path: docs/office/plan.md
+  content: [plan content from agent response]
+```
+
+**Verify:**
 ```bash
-ls docs/office/plan.md && echo "SUCCESS" || echo "FAILED"
+ls docs/office/plan.md && echo "SUCCESS"
 ```
 
-If FAILED: Report error and stop.
+## Step 3: Consult Team Lead
 
-## Step 3: Dispatch Team Lead
-
-The Team Lead breaks down the plan into granular tasks.
+The Team Lead analyzes the plan and returns task breakdown.
 
 **Fill the template** at `team-lead-prompt.md` with:
 - `{PLAN_MD}` - Contents of docs/office/plan.md (just created)
 - `{PRD}` - Contents of 02-prd.md
 - `{SYSTEM_DESIGN}` - Contents of 04-system-design.md
 
-**Dispatch agent:**
+**Dispatch advisor:**
 ```
 Task tool:
   subagent_type: office:team-lead
-  prompt: [filled template from team-lead-prompt.md]
+  prompt: [filled template]
 ```
 
-**Verify outputs:**
+**After agent returns:** Extract BOTH outputs and write them:
+
+```
+Write tool:
+  file_path: docs/office/tasks.yaml
+  content: [tasks.yaml content from agent response]
+
+Write tool:
+  file_path: docs/office/05-implementation-spec.md
+  content: [implementation spec content from agent response]
+```
+
+**Verify:**
 ```bash
-ls docs/office/tasks.yaml docs/office/05-implementation-spec.md && echo "SUCCESS" || echo "FAILED"
+ls docs/office/tasks.yaml docs/office/05-implementation-spec.md && echo "SUCCESS"
 ```
 
-If FAILED: Report error and stop.
+## Step 4: Consult DevOps
 
-## Step 4: Dispatch DevOps
-
-DevOps adds environment setup and deployment instructions.
+DevOps analyzes the stack and returns environment setup content.
 
 **Fill the template** at `devops-prompt.md` with:
 - `{SYSTEM_DESIGN}` - Contents of 04-system-design.md
 - `{PLAN_MD}` - Current contents of docs/office/plan.md
 
-**Dispatch agent:**
+**Dispatch advisor:**
 ```
 Task tool:
   subagent_type: office:devops
-  prompt: [filled template from devops-prompt.md]
+  prompt: [filled template]
 ```
 
-**Verify output:**
+**After agent returns:** Append the environment section to plan.md:
+
+```
+Edit tool:
+  file_path: docs/office/plan.md
+  old_string: [last line of current plan.md]
+  new_string: [last line + environment section from agent response]
+```
+
+**Verify:**
 ```bash
-grep -q "Environment Setup" docs/office/plan.md && echo "SUCCESS" || echo "FAILED"
+grep -q "Environment Setup" docs/office/plan.md && echo "SUCCESS"
 ```
 
 ## Step 5: Finalize Session
@@ -117,7 +144,6 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 
 ## Step 6: Report Completion
 
-List all created files and their line counts:
 ```bash
 wc -l docs/office/plan.md docs/office/tasks.yaml docs/office/05-implementation-spec.md
 ```

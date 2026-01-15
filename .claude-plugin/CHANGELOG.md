@@ -2,6 +2,17 @@
 
 All notable changes to the Office plugin will be documented in this file.
 
+## [0.2.37] - 2026-01-15
+
+### Changed
+
+- **Agents as advisors, Claude as implementer**: Fixed subagent file write bug (known Claude Code issue)
+  - Subagents now RETURN content instead of trying to write files
+  - Main Claude agent writes files after receiving advisor output
+  - Pattern: Agent analyzes → returns marked content → Claude extracts and writes
+  - Output markers: `PLAN_CONTENT_START/END`, `TASKS_YAML_START/END`, etc.
+  - References: GitHub issues #7032, #4462, #13890
+
 ## [0.2.36] - 2026-01-15
 
 ### Changed
