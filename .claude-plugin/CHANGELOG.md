@@ -2,6 +2,26 @@
 
 All notable changes to the Office plugin will be documented in this file.
 
+## [0.2.43] - 2026-01-16
+
+### Changed
+
+- **Build skill redesign**: Replaced 380-line monolithic skill with lean orchestrator + 4 subagent prompts
+  - New architecture: Implementer → Clarifier → Spec-Reviewer → Code-Reviewer pipeline
+  - Autonomous execution with no man-in-loop (flags only for critical blockers)
+  - Two-stage review: spec compliance (Haiku) then code quality (Sonnet)
+  - Configurable model presets: default (Sonnet/Opus/Haiku/Sonnet), fast, quality
+  - ~950 tokens per task (happy path) vs previous monolithic context
+  - Parallel features, sequential tasks within each feature
+
+### Added
+
+- **Subagent prompt templates**: New `skills/building/prompts/` directory
+  - `implementer.md` - TDD implementation with DONE/NEED_CLARIFICATION/ERROR outputs
+  - `clarifier.md` - Opus-powered codebase exploration for blocking questions
+  - `spec-reviewer.md` - Haiku-powered spec compliance verification
+  - `code-reviewer.md` - Sonnet-powered code quality review
+
 ## [0.2.42] - 2026-01-15
 
 ### Changed
