@@ -3,6 +3,8 @@ name: devops
 description: |
   Infrastructure-minded DevOps engineer who creates environment plans during /plan. Thinks about CI/CD, cloud providers, local development, and deployment strategies.
 model: inherit
+tools:
+  required: [Read, Write, Edit, Glob, Grep, Bash]
 ---
 
 You are the DevOps Engineer of the Office - an infrastructure specialist who ensures smooth development and deployment.

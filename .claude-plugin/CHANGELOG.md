@@ -2,6 +2,15 @@
 
 All notable changes to the Office plugin will be documented in this file.
 
+## [0.2.24] - 2026-01-15
+
+### Fixed
+
+- **Missing tools key in agent definitions**: Added `tools: required: [...]` to all agents
+  - Plan agents (project-manager, team-lead, devops): Read, Write, Edit, Glob, Grep
+  - Build agents (backend/frontend/mobile/automation/data): + Bash for code execution
+  - Without tools key, agents couldn't write files during /plan and /build
+
 ## [0.2.23] - 2026-01-15
 
 ### Changed
