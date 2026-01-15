@@ -233,6 +233,18 @@ def index():
     return send_from_directory(app.static_folder, 'index.html')
 
 
+@app.route('/style.css')
+def style():
+    """Serve CSS file."""
+    return send_from_directory(app.static_folder, 'style.css')
+
+
+@app.route('/app.js')
+def appjs():
+    """Serve JS file."""
+    return send_from_directory(app.static_folder, 'app.js')
+
+
 @app.route('/api/state')
 def api_state():
     """Return current build state as JSON."""

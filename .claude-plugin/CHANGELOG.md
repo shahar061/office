@@ -2,6 +2,15 @@
 
 All notable changes to the Office plugin will be documented in this file.
 
+## [0.2.21] - 2026-01-15
+
+### Fixed
+
+- **Dashboard static files not loading**: Added explicit routes for style.css and app.js
+  - Flask serves static files at /static/ prefix by default
+  - HTML referenced files with relative paths (/style.css, /app.js)
+  - Added routes to serve these files directly from static folder
+
 ## [0.2.20] - 2026-01-15
 
 ### Added
