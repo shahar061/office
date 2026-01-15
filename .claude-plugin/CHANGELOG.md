@@ -2,6 +2,15 @@
 
 All notable changes to the Office plugin will be documented in this file.
 
+## [0.2.26] - 2026-01-15
+
+### Changed
+
+- **Fixed /plan phase execution order**: PM runs first, then Team Lead + DevOps in parallel
+  - Step 2: Project Manager creates plan.md (must complete first)
+  - Step 3: Team Lead + DevOps run in parallel (DevOps needs plan.md to edit)
+  - Resolves dependency: DevOps can't edit plan.md until PM creates it
+
 ## [0.2.25] - 2026-01-15
 
 ### Fixed

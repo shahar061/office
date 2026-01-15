@@ -29,43 +29,50 @@ Check session state:
 - If documents missing: "Missing [document]. Run /imagine to complete design."
 - If valid: Announce War Room start
 
-### 2. Parallel Agent Work (PM, Team Lead, DevOps)
+### 2. Project Manager Creates plan.md
 
-Agent Organizer announces: "Starting parallel planning work..."
+Agent Organizer announces: "Project Manager is creating the implementation plan..."
 
-**IMPORTANT: To run agents in parallel, you MUST invoke all three Task tools in a SINGLE message.**
-
-Spawn these three agents simultaneously:
-
-**Project Manager** - Define milestones:
+Spawn Project Manager agent:
 - Reviews all four design documents
 - Identifies logical implementation phases
 - Defines milestone deliverables
 - Establishes phase dependencies
+- **Writes `docs/office/plan.md`**
+
+Wait for Project Manager to complete before proceeding.
+
+### 3. Parallel: Team Lead + DevOps
+
+Agent Organizer announces: "Starting parallel work: Team Lead + DevOps..."
+
+**IMPORTANT: To run agents in parallel, you MUST invoke both Task tools in a SINGLE message.**
+
+Spawn these two agents simultaneously:
 
 **Team Lead** - Break down tasks:
 - Takes System Design components
 - Creates discrete, executable tasks
 - Defines task dependencies
 - Sets acceptance criteria
-- Targets 5-15 minute tasks
+- **Writes `docs/office/tasks.yaml`**
+- **Writes `docs/office/05-implementation-spec.md`**
 
 **DevOps** - Environment plan:
-- Defines local dev setup
-- Plans CI/CD pipeline
-- Specifies infrastructure needs
-- Documents deployment strategy
+- Reads plan.md created by PM
+- Adds environment section to plan.md
+- Defines local dev setup, CI/CD, deployment
+- **Edits `docs/office/plan.md` to add Environment section**
 
-**Example invocation (all in one message):**
+**Example invocation (both in one message):**
 ```
-[Task tool: Project Manager agent]
 [Task tool: Team Lead agent]
 [Task tool: DevOps agent]
 ```
 
-Wait for all three agents to complete before proceeding to step 3.
+Wait for both agents to complete before proceeding to step 4.
 
-### 3. Agent Organizer: Assign Tasks
+### 4. Agent Organizer: Assign Tasks
 
 Agent Organizer:
 - Reviews all tasks
@@ -73,7 +80,7 @@ Agent Organizer:
 - Validates dependency graph
 - Produces final tasks.yaml
 
-### 4. Dependency Validation
+### 5. Dependency Validation
 
 Agent Organizer validates the dependency graph:
 
@@ -110,7 +117,7 @@ Agent Organizer asks user to resolve before proceeding.
   - Execution order: user-auth → [settings, api-layer] → dashboard → admin
 ```
 
-### 5. Implementation Spec Generation
+### 6. Implementation Spec Generation
 
 **Team Lead MUST write `docs/office/05-implementation-spec.md`** with detailed TDD steps for each task.
 
@@ -165,12 +172,12 @@ git commit -m "feat: add specific feature"
 - Complete code - never "add validation logic here"
 - Each step is 2-5 minutes of work
 
-### 6. Output Generation
+### 7. Output Generation
 
 **You MUST write these four files to `docs/office/`:**
 
 **`05-implementation-spec.md`** (detailed TDD steps):
-- Generated in step 5 above
+- Generated in step 6 above
 - Contains exact file paths, test code, and implementation code for each task
 - This is the primary reference for `/build` agents
 
@@ -218,7 +225,7 @@ Key structure:
 - Task-level `depends_on` controls order within feature
 - Each feature maps to one branch and one worktree
 
-### 7. Validate tasks.yaml
+### 8. Validate tasks.yaml
 
 After writing `tasks.yaml`, validate it can be parsed by PyYAML:
 
@@ -241,7 +248,7 @@ If validation fails, fix the syntax error and re-validate before proceeding.
 - Update `status: plan_complete`
 - Add plan metadata (phases, tasks, agents involved)
 
-### 8. User Review
+### 9. User Review
 
 Agent Organizer presents output:
 "Implementation plan complete. Please review plan.md, tasks.yaml, and 05-implementation-spec.md.
@@ -255,7 +262,7 @@ Want me to adjust anything before we finalize?"
 User can request changes. Once approved:
 - Update session.yaml: `status: plan_complete`
 
-### 9. Commit Plan Documents
+### 10. Commit Plan Documents
 
 After user approves the plan, commit all documents to git:
 
