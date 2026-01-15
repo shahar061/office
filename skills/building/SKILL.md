@@ -178,3 +178,113 @@ For each ready feature:
       On FLAG: Exit with flag details
       On all tasks complete: Exit with success
 ```
+
+## Flag Handling
+
+Flags are the **only** time human intervention is needed.
+
+### Flag Types
+
+| Type | Trigger | Severity |
+|------|---------|----------|
+| `clarifier_blocked` | Clarifier can't answer from codebase | BLOCKING |
+| `spec_review_exhausted` | 3 attempts, still not compliant | BLOCKING |
+| `code_review_exhausted` | 3 attempts, still has issues | WARNING |
+| `implementation_error` | Unrecoverable error | BLOCKING |
+| `security_concern` | Potential vulnerability | BLOCKING |
+
+### On Flag Received
+
+```yaml
+1. Update build-state.yaml:
+   - Task status: flagged
+   - Add to flags array
+
+2. Present to user:
+   🚩 FLAG: [type]
+
+   Task: [task-id] - [task-title]
+   Feature: [feature-id]
+
+   [Context from flag payload]
+
+   Options:
+   [1] Provide guidance
+   [2] Skip task
+   [3] Accept as-is
+   [4] Abort feature
+
+3. On user choice:
+   - Guidance: Resume feature with user's input
+   - Skip: Mark task skipped, continue to next
+   - Accept: Mark task completed with warnings
+   - Abort: Mark feature aborted, continue others
+```
+
+### Severity Behavior
+
+| Severity | Feature | Other Features |
+|----------|---------|----------------|
+| BLOCKING | Paused until resolved | Continue |
+| WARNING | Continues (task has warnings) | Unaffected |
+
+## Completion
+
+### On Feature Complete
+
+```yaml
+Apply completion policy:
+  auto-merge:
+    - Merge feature branch to main
+    - Delete worktree
+  pr:
+    - Create pull request
+    - Keep worktree until merged
+  checkpoint:
+    - Pause for user review
+    - Ask: "Feature [id] complete. Review and continue?"
+
+Invoke: superpowers:finishing-a-development-branch
+Check: Any blocked features now unblocked?
+```
+
+### On All Features Complete
+
+```markdown
+## Build Complete!
+
+**Duration:** [time]
+**Features:** [N] completed, [M] skipped
+
+| Feature | Tasks | Flags | Status |
+|---------|-------|-------|--------|
+| [id] | [N/M] | [count] | [status] |
+
+**Next steps:**
+- Review merged code
+- Run full test suite
+- Deploy to staging
+```
+
+### Cleanup
+
+```bash
+# Stop dashboard
+pkill -f "server.py.*office" 2>/dev/null
+
+# Update session.yaml
+status: build_complete
+```
+
+## Files
+
+**Skill files:**
+- `SKILL.md` - This orchestrator
+- `prompts/implementer.md` - Implementer subagent template
+- `prompts/clarifier.md` - Clarifier subagent template
+- `prompts/spec-reviewer.md` - Spec reviewer subagent template
+- `prompts/code-reviewer.md` - Code reviewer subagent template
+
+**Runtime files:**
+- `docs/office/build-state.yaml` - Build progress state
+- `docs/office/session.yaml` - Updated on completion
