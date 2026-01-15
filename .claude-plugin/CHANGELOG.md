@@ -2,6 +2,15 @@
 
 All notable changes to the Office plugin will be documented in this file.
 
+## [0.2.23] - 2026-01-15
+
+### Changed
+
+- **Parallel feature execution in /build phase**: Added explicit instructions for running features concurrently
+  - Features with no unmet dependencies start simultaneously via multiple Task tools in single message
+  - Clarified rules: features parallel (isolated worktrees), tasks sequential (shared worktree)
+  - Same agent type can run in parallel across different features (separate instances)
+
 ## [0.2.22] - 2026-01-15
 
 ### Changed

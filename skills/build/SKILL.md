@@ -103,6 +103,22 @@ Available agents and their domains:
 
 ### Execution Flow
 
+**IMPORTANT - Parallel Execution:**
+
+To run features in parallel, you MUST invoke multiple Task tools in a SINGLE message. Each ready feature (no unmet dependencies) should be started simultaneously.
+
+**Example:** If `user-auth` and `payments` are both ready:
+```
+[Task tool: Start user-auth feature with backend-engineer]
+[Task tool: Start payments feature with backend-engineer]
+```
+Both agents work in isolated worktrees - no conflicts.
+
+**Rules:**
+- Features with `depends_on: []` or all dependencies completed → run in parallel
+- Tasks within same feature → run sequentially (shared worktree)
+- Same agent type in different features → CAN run in parallel (separate instances)
+
 ```
 While features remain incomplete:
 
@@ -111,8 +127,9 @@ While features remain incomplete:
      - All depends_on features are 'completed'
 
   2. For each ready feature (in parallel):
-     a. Agent Organizer announces: "Starting feature [name]..."
-     b. Invoke superpowers:using-git-worktrees skill
+     **Invoke one Task tool per ready feature in a SINGLE message.**
+     a. Agent Organizer announces: "Starting [N] features in parallel..."
+     b. For each: Invoke superpowers:using-git-worktrees skill
      c. Update build-state.yaml: feature status = in_progress
      d. Add feature's tasks to queue
 
