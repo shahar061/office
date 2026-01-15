@@ -2,6 +2,16 @@
 
 All notable changes to the Office plugin will be documented in this file.
 
+## [0.2.33] - 2026-01-15
+
+### Changed
+
+- **Single orchestrator agent approach**: Instead of skill controlling multiple agents, spawn ONE agent-organizer that executes all steps sequentially
+  - Steps A-G executed IN ORDER by single agent
+  - Agent does PM, Team Lead, DevOps work directly (no sub-agents)
+  - Each step has "You MUST use the Write/Edit tool. Do not just describe what to do."
+  - Explicit confirmations after each step
+
 ## [0.2.32] - 2026-01-15
 
 ### Changed

@@ -5,154 +5,257 @@ description: "Use after /imagine completes to create an executable implementatio
 
 # /plan
 
-## Step 1: Validate Session
+**This skill spawns a single orchestrator agent that handles the entire planning process.**
+
+## Step 1: Validate Prerequisites
 
 Read `docs/office/session.yaml`. If status is not `imagine_complete`, stop and say "Run /imagine first."
 
-## Step 2: Read All Design Documents
-
-Read these files now and store their content:
-- `docs/office/01-vision-brief.md`
-- `docs/office/02-prd.md`
-- `docs/office/03-market-analysis.md`
-- `docs/office/04-system-design.md`
-
-You will paste this content into agent prompts.
-
-## Step 3: Spawn Project Manager
-
-**Do NOT proceed to Step 4 until this agent completes.**
+## Step 2: Spawn Plan Orchestrator
 
 Use the Task tool now:
 
 ```
 Task tool:
-  subagent_type: office:project-manager
+  subagent_type: office:agent-organizer
   prompt: |
-    Create the implementation plan for this project.
+    You are orchestrating the /plan phase. Execute these steps IN ORDER.
 
-    ## Design Documents
+    ## STEP A: Read All Design Documents
 
-    [PASTE FULL CONTENT OF ALL 4 DESIGN DOCUMENTS HERE]
+    Read these 4 files now:
+    - docs/office/01-vision-brief.md
+    - docs/office/02-prd.md
+    - docs/office/03-market-analysis.md
+    - docs/office/04-system-design.md
 
-    ## Your Job
+    Store their content - you will need it for the agent prompts.
 
-    1. Analyze the design documents
-    2. Identify 5-8 implementation phases
-    3. Define milestones for each phase
-    4. Use the Write tool to create docs/office/plan.md
+    ## STEP B: Create plan.md (Project Manager Work)
+
+    You will now do the Project Manager's job directly.
+
+    Use the Write tool to create docs/office/plan.md with this structure:
+
+    # Implementation Plan: [Product Name from Vision Brief]
+
+    ## Overview
+    [2-3 paragraphs summarizing the implementation approach based on the PRD and System Design]
+
+    ## Phases
+
+    ### Phase 1: Project Foundation
+    **Goal**: Set up project structure, tooling, and CI/CD
+    **Milestone**: Running dev server with linting and tests
+    **Dependencies**: None
+
+    #### Key Tasks
+    - [ ] Initialize project with chosen framework
+    - [ ] Configure TypeScript, ESLint, Prettier
+    - [ ] Set up database schema
+    - [ ] Configure CI/CD pipeline
+
+    ### Phase 2: Core Backend
+    **Goal**: Implement core API and data layer
+    **Milestone**: All API endpoints functional with tests
+    **Dependencies**: Phase 1
+
+    #### Key Tasks
+    - [ ] Implement database models
+    - [ ] Create API routes
+    - [ ] Add authentication if needed
+    - [ ] Write integration tests
+
+    ### Phase 3: Core Frontend
+    **Goal**: Build main UI components and screens
+    **Milestone**: All screens navigable with mock data
+    **Dependencies**: Phase 2
+
+    #### Key Tasks
+    - [ ] Create page layouts
+    - [ ] Build reusable components
+    - [ ] Implement state management
+    - [ ] Connect to API
+
+    ### Phase 4: Feature Integration
+    **Goal**: Connect all features end-to-end
+    **Milestone**: Complete user flows working
+    **Dependencies**: Phase 3
+
+    ### Phase 5: Polish & Launch
+    **Goal**: Final testing, optimization, deployment
+    **Milestone**: Production deployment
+    **Dependencies**: Phase 4
+
+    ## Phase Overview
+
+    | Phase | Goal | Milestone | Dependencies |
+    |-------|------|-----------|--------------|
+    | 1. Foundation | Project setup | Dev server running | None |
+    | 2. Backend | Core API | APIs functional | Phase 1 |
+    | 3. Frontend | Main UI | Screens working | Phase 2 |
+    | 4. Integration | End-to-end | User flows complete | Phase 3 |
+    | 5. Launch | Deploy | Production live | Phase 4 |
+
+    ## Risk Mitigation
+
+    | Risk | Impact | Mitigation |
+    |------|--------|------------|
+    | Scope creep | High | Strict MVP focus |
+    | Tech issues | Medium | Proven stack choices |
+
+    Customize this template based on the actual project from the design docs.
 
     You MUST use the Write tool. Do not just describe what to do.
 
-    Format for plan.md:
-    # Implementation Plan: [Name]
-    ## Overview
-    ## Phases
-    ### Phase 1: [Name]
-    **Goal**: ...
-    **Milestone**: ...
-    #### Key Tasks
-    - [ ] Task 1
-    ### Phase 2: ...
-    ## Phase Overview (table)
-    ## Risk Mitigation (table)
+    After writing, confirm: "plan.md created"
 
-    When done, confirm: "File written: docs/office/plan.md"
-```
+    ## STEP C: Create tasks.yaml (Team Lead Work)
 
-## Step 4: After Project Manager Completes
+    Now do the Team Lead's job directly.
 
-Read the newly created `docs/office/plan.md`.
+    Use the Write tool to create docs/office/tasks.yaml:
 
-Then spawn BOTH agents in a SINGLE message:
-
-### Agent 1: Team Lead
-
-Use the Task tool:
-
-```
-Task tool:
-  subagent_type: office:team-lead
-  prompt: |
-    Break down the plan into executable tasks.
-
-    ## Plan
-    [PASTE FULL CONTENT OF docs/office/plan.md]
-
-    ## System Design
-    [PASTE FULL CONTENT OF docs/office/04-system-design.md]
-
-    ## Your Job
-
-    Create TWO files:
-    1. docs/office/tasks.yaml - Task manifest
-    2. docs/office/05-implementation-spec.md - TDD steps
-
-    You MUST use the Write tool for BOTH files. Do not just describe what to do.
-
-    Format for tasks.yaml:
     version: "1.0"
-    project: "[Name]"
+    project: "[Product Name]"
     features:
-      - id: "feature-1"
-        name: "[Name]"
+      - id: "setup"
+        name: "Project Setup"
+        phase: 1
         tasks:
-          - id: "task-001"
-            description: "[Task]"
-            assigned_agent: "backend_engineer"
+          - id: "setup-001"
+            description: "Initialize project with framework"
+            assigned_agent: "frontend_engineer"
+            dependencies: []
             acceptance_criteria:
-              - "[Criterion]"
+              - "Project runs with dev command"
+              - "TypeScript configured"
 
-    When done, confirm: "Files written: tasks.yaml, 05-implementation-spec.md"
-```
+          - id: "setup-002"
+            description: "Configure database connection"
+            assigned_agent: "backend_engineer"
+            dependencies: ["setup-001"]
+            acceptance_criteria:
+              - "Database connects successfully"
+              - "Migrations run"
 
-### Agent 2: DevOps
+      - id: "backend"
+        name: "Backend Implementation"
+        phase: 2
+        tasks:
+          - id: "backend-001"
+            description: "Create database schema"
+            assigned_agent: "backend_engineer"
+            dependencies: ["setup-002"]
+            acceptance_criteria:
+              - "All tables created"
+              - "Relationships defined"
 
-Use the Task tool:
+    Create 30-50 tasks covering all phases. Each task should be 5-15 minutes of work.
 
-```
-Task tool:
-  subagent_type: office:devops
-  prompt: |
-    Add environment setup to the plan.
+    You MUST use the Write tool. Do not just describe what to do.
 
-    ## Current Plan
-    [PASTE FULL CONTENT OF docs/office/plan.md]
+    After writing, confirm: "tasks.yaml created"
 
-    ## Tech Stack (from System Design)
-    [PASTE TECH STACK SECTION]
+    ## STEP D: Create Implementation Spec
 
-    ## Your Job
+    Use the Write tool to create docs/office/05-implementation-spec.md:
+
+    # Implementation Specification
+
+    ## Task setup-001: Initialize Project
+
+    **Files:**
+    - Create: `package.json`, `tsconfig.json`
+    - Create: `src/index.ts`
+
+    **Steps:**
+    1. Run: `npm init -y`
+    2. Install dependencies
+    3. Configure TypeScript
+    4. Verify: `npm run dev` works
+
+    ## Task setup-002: Configure Database
+    ...
+
+    Cover the first 10-15 tasks with detailed TDD steps.
+
+    You MUST use the Write tool. Do not just describe what to do.
+
+    After writing, confirm: "05-implementation-spec.md created"
+
+    ## STEP E: Add Environment Setup to plan.md
 
     Use the Edit tool to APPEND to docs/office/plan.md:
 
     ## Environment Setup
+
     ### Prerequisites
+    - Node.js 20+
+    - pnpm (or npm)
+    - PostgreSQL (or configured database)
+
     ### Local Development
+
+    ```bash
+    git clone [repo]
+    cd [project]
+    pnpm install
+    cp .env.example .env
+    # Edit .env with your values
+    pnpm db:push
+    pnpm dev
+    ```
+
     ### Environment Variables
+
+    | Variable | Description | Example |
+    |----------|-------------|---------|
+    | DATABASE_URL | Database connection | postgresql://... |
+
     ## CI/CD Pipeline
+
+    1. Lint & Type Check
+    2. Test
+    3. Build
+    4. Deploy
+
     ## Deployment
+
+    - Platform: Vercel (or chosen platform)
+    - Production: Auto-deploy on push to main
+
+    Customize based on the tech stack in System Design.
 
     You MUST use the Edit tool. Do not just describe what to do.
 
-    When done, confirm: "File updated: plan.md with environment section"
+    After editing, confirm: "Environment section added to plan.md"
+
+    ## STEP F: Update Session
+
+    Use the Edit tool to update docs/office/session.yaml:
+    - Change status to: plan_complete
+    - Change current_phase to: plan_complete
+
+    You MUST use the Edit tool. Do not just describe what to do.
+
+    ## STEP G: Final Report
+
+    List all files created:
+    - docs/office/plan.md
+    - docs/office/tasks.yaml
+    - docs/office/05-implementation-spec.md
+    - docs/office/session.yaml (updated)
+
+    Confirm: "Plan phase complete. Ready for /build"
 ```
 
-## Step 5: After Both Agents Complete
+## Step 3: After Orchestrator Completes
 
-Validate the outputs:
+Verify the files were created:
 
 ```bash
 ls docs/office/plan.md docs/office/tasks.yaml docs/office/05-implementation-spec.md
-python3 -c "import yaml; yaml.safe_load(open('docs/office/tasks.yaml')); print('Valid YAML')"
 ```
 
-## Step 6: Update Session
-
-Use the Edit tool to update `docs/office/session.yaml`:
-- Set `status: plan_complete`
-- Set `current_phase: plan_complete`
-
-## Step 7: Present Summary
-
-Show what was created and say: "Plan complete! Review the artifacts, then /build when ready."
+Tell the user: "Plan complete! Review the artifacts, then /build when ready."
