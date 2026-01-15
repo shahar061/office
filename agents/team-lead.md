@@ -57,7 +57,9 @@ When writing `tasks.yaml`, you MUST quote strings containing special characters 
 
 ## Tasks.yaml Structure
 
-**Write `docs/office/tasks.yaml`:**
+**You MUST write tasks to `docs/office/tasks.yaml` using the Write tool.**
+
+Do NOT just generate content in your response - you MUST use the Write tool to save the file.
 
 ```yaml
 version: "1.0"
@@ -98,7 +100,9 @@ Assign to appropriate agent:
 
 ## 05-implementation-spec.md Structure
 
-**Write `docs/office/05-implementation-spec.md`** with detailed TDD steps for each task:
+**You MUST also write `docs/office/05-implementation-spec.md` using the Write tool.**
+
+This is your second required output file. Use Write tool to save it.
 
 ```markdown
 ### Task [id]: [title]

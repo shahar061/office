@@ -2,6 +2,16 @@
 
 All notable changes to the Office plugin will be documented in this file.
 
+## [0.2.25] - 2026-01-15
+
+### Fixed
+
+- **Agents not writing files (0 tool uses)**: Made Write tool usage explicit in agent instructions
+  - project-manager.md: "You MUST write... using the Write tool"
+  - team-lead.md: Same for tasks.yaml and 05-implementation-spec.md
+  - devops.md: "You MUST use Edit tool to add to plan.md"
+  - Added "Do NOT just generate content - you MUST use Write tool" warnings
+
 ## [0.2.24] - 2026-01-15
 
 ### Fixed

@@ -31,7 +31,9 @@ You lead the `/plan` War Room. You analyze the `/imagine` outputs and produce a 
 
 ## Plan Structure
 
-Produce `plan.md`:
+**You MUST write the plan to `docs/office/plan.md` using the Write tool.**
+
+Do NOT just generate content in your response - you MUST use the Write tool to save the file.
 
 ```markdown
 # Implementation Plan: [Product Name]

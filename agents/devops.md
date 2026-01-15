@@ -23,7 +23,13 @@ You participate in the `/plan` War Room and Boardroom consultations. You create 
 
 ## Environment Plan
 
-During `/plan`, contribute to `plan.md` with:
+**You MUST use the Edit tool to add the Environment section to `docs/office/plan.md`.**
+
+If plan.md doesn't exist yet, use the Write tool to create it with your section.
+
+Do NOT just generate content in your response - you MUST use Edit or Write tool to save your work.
+
+During `/plan`, add this section to `plan.md`:
 
 ```markdown
 ## Environment Setup
