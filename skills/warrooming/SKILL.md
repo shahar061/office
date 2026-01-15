@@ -5,147 +5,150 @@ description: "Use after /imagine completes to create an executable implementatio
 
 # War Room Planning
 
-Transform design documents into an executable implementation plan using your virtual startup team.
+Transform design documents into an executable implementation plan.
 
 **Announce at start:** "I'm using the warrooming skill to create the implementation plan."
 
-**Important:** Subagents are ADVISORS - they analyze and return content. YOU (Claude) write the files.
+**Important:** Subagents are ADVISORS - they return content. YOU write the files.
 
 ## Prerequisites
 
 Check `docs/office/session.yaml`:
 - If `status` is not `imagine_complete`: Stop and say "Run /imagine first."
-- If status is valid: Continue.
 
-## Step 1: Gather Context
+## Step 1: Gather Context (Lean)
 
-Read all design documents:
+Read design documents and extract KEY SECTIONS only:
 
-```bash
-cat docs/office/01-vision-brief.md
-cat docs/office/02-prd.md
-cat docs/office/03-market-analysis.md
-cat docs/office/04-system-design.md
+```
+From 01-vision-brief.md: The Problem, The Vision, Key Capabilities
+From 02-prd.md: User Stories, Feature Priority table
+From 04-system-design.md: Technology Stack table, Components list
 ```
 
-Store contents for filling agent templates.
+Do NOT pass full documents to agents - only relevant sections.
 
 ## Step 2: Consult Project Manager
 
-The PM analyzes docs and returns the plan content.
+PM creates the phased implementation plan.
 
-**Fill the template** at `project-manager-prompt.md` with:
-- `{VISION_BRIEF}` - Contents of 01-vision-brief.md
-- `{PRD}` - Contents of 02-prd.md
-- `{SYSTEM_DESIGN}` - Contents of 04-system-design.md
-
-**Dispatch advisor:**
+**Dispatch with LEAN context:**
 ```
 Task tool:
   subagent_type: office:project-manager
-  prompt: [filled template]
+  prompt: |
+    # Project Manager: Create Implementation Plan
+
+    **Your role:** ADVISOR - return content, don't write files.
+
+    ## Key Context
+
+    ### Vision & Capabilities
+    [Paste: Problem, Vision, Key Capabilities from vision brief]
+
+    ### Features to Implement
+    [Paste: Feature Priority table from PRD]
+
+    ### Tech Stack
+    [Paste: Technology Stack table from system design]
+
+    ## Task
+
+    Create a phased implementation plan (4-6 phases).
+    Each phase needs: Goal, Milestone, Dependencies, Key Tasks.
+
+    ## Output
+
+    Return between markers:
+    PLAN_CONTENT_START
+    [Your plan.md content]
+    PLAN_CONTENT_END
 ```
 
-**After agent returns:** Extract the plan content from the agent's response and use the Write tool to save it:
-
-```
-Write tool:
-  file_path: docs/office/plan.md
-  content: [plan content from agent response]
-```
-
-**Verify:**
-```bash
-ls docs/office/plan.md && echo "SUCCESS"
-```
+**After agent returns:** Write to `docs/office/plan.md`
 
 ## Step 3: Consult Team Lead
 
-The Team Lead analyzes the plan and returns task breakdown.
+Team Lead breaks plan into executable tasks.
 
-**Fill the template** at `team-lead-prompt.md` with:
-- `{PLAN_MD}` - Contents of docs/office/plan.md (just created)
-- `{PRD}` - Contents of 02-prd.md
-- `{SYSTEM_DESIGN}` - Contents of 04-system-design.md
-
-**Dispatch advisor:**
+**Dispatch with LEAN context:**
 ```
 Task tool:
   subagent_type: office:team-lead
-  prompt: [filled template]
+  prompt: |
+    # Team Lead: Create Task Breakdown
+
+    **Your role:** ADVISOR - return content, don't write files.
+
+    ## Context
+
+    ### Implementation Plan
+    [Paste: The plan.md just created]
+
+    ### User Stories Reference
+    [Paste: User Stories section from PRD]
+
+    ## Task
+
+    Create tasks.yaml with 20-30 tasks (not 50).
+    Each task: id, description, assigned_agent, dependencies, acceptance_criteria.
+    Keep it focused - no TDD steps here.
+
+    ## Output
+
+    Return between markers:
+    TASKS_YAML_START
+    [Your tasks.yaml content]
+    TASKS_YAML_END
 ```
 
-**After agent returns:** Extract BOTH outputs and write them:
-
-```
-Write tool:
-  file_path: docs/office/tasks.yaml
-  content: [tasks.yaml content from agent response]
-
-Write tool:
-  file_path: docs/office/05-implementation-spec.md
-  content: [implementation spec content from agent response]
-```
-
-**Verify:**
-```bash
-ls docs/office/tasks.yaml docs/office/05-implementation-spec.md && echo "SUCCESS"
-```
+**After agent returns:** Write to `docs/office/tasks.yaml`
 
 ## Step 4: Consult DevOps
 
-DevOps analyzes the stack and returns environment setup content.
+DevOps adds environment setup.
 
-**Fill the template** at `devops-prompt.md` with:
-- `{SYSTEM_DESIGN}` - Contents of 04-system-design.md
-- `{PLAN_MD}` - Current contents of docs/office/plan.md
-
-**Dispatch advisor:**
+**Dispatch with LEAN context:**
 ```
 Task tool:
   subagent_type: office:devops
-  prompt: [filled template]
+  prompt: |
+    # DevOps: Environment Setup
+
+    **Your role:** ADVISOR - return content, don't write files.
+
+    ## Context
+
+    ### Tech Stack
+    [Paste: Technology Stack table from system design]
+
+    ### Infrastructure
+    [Paste: Deployment section from system design]
+
+    ## Task
+
+    Create environment setup section: Prerequisites, Local Setup, Env Vars, CI/CD, Deployment.
+    Be specific to the tech stack above.
+
+    ## Output
+
+    Return between markers:
+    ENV_SECTION_START
+    [Your environment section - starts with ## Environment Setup]
+    ENV_SECTION_END
 ```
 
-**After agent returns:** Append the environment section to plan.md:
+**After agent returns:** Append to `docs/office/plan.md`
 
-```
-Edit tool:
-  file_path: docs/office/plan.md
-  old_string: [last line of current plan.md]
-  new_string: [last line + environment section from agent response]
-```
+## Step 5: Finalize
 
-**Verify:**
-```bash
-grep -q "Environment Setup" docs/office/plan.md && echo "SUCCESS"
-```
+1. Update `docs/office/session.yaml`: status → plan_complete
+2. Commit: `git add docs/office/ && git commit -m "docs(office): complete warroom phase"`
+3. Say: "War Room complete! Run /build when ready."
 
-## Step 5: Finalize Session
+---
 
-Update `docs/office/session.yaml`:
-```yaml
-status: plan_complete
-current_phase: plan_complete
-```
+## Note: Implementation Specs
 
-Commit the planning documents:
-```bash
-git add docs/office/
-git commit -m "docs(office): complete warroom phase
-
-Planning documents:
-- plan.md
-- tasks.yaml
-- 05-implementation-spec.md
-
-Co-Authored-By: Claude <noreply@anthropic.com>"
-```
-
-## Step 6: Report Completion
-
-```bash
-wc -l docs/office/plan.md docs/office/tasks.yaml docs/office/05-implementation-spec.md
-```
-
-Say: "War Room complete! Review the artifacts, then run /build when ready."
+Detailed TDD implementation specs are generated ON-DEMAND during /build phase, not here.
+This keeps /warroom fast and focused on planning structure.

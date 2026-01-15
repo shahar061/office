@@ -2,6 +2,17 @@
 
 All notable changes to the Office plugin will be documented in this file.
 
+## [0.2.38] - 2026-01-15
+
+### Changed
+
+- **Lean warroom for speed**: Reduced token usage and time significantly
+  - Pass KEY SECTIONS to agents, not full documents (~70% token reduction)
+  - Removed separate template files - prompts inlined in SKILL.md
+  - Reduced tasks from 30-50 to 20-30 (faster generation)
+  - Moved implementation specs to /build phase (on-demand per task)
+  - Expected: ~15k tokens instead of ~40k, ~3-5 min instead of ~15 min
+
 ## [0.2.37] - 2026-01-15
 
 ### Changed
