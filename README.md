@@ -48,12 +48,12 @@ Produces:
 - `docs/office/03-market-analysis.md`
 - `docs/office/04-system-design.md`
 
-### /plan - Planning Phase
+### /warroom - Planning Phase (War Room)
 
 After design is complete:
 
 ```
-/plan
+/warroom
 ```
 
 The War Room automatically creates:

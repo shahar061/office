@@ -1,17 +1,17 @@
 ---
-name: plan
-description: "Use after /imagine completes to create an executable implementation plan."
+name: warroom
+description: "Use after /imagine completes to create an executable implementation plan (War Room phase)."
 ---
 
-# /plan
+# /warroom
 
-**This skill spawns a single orchestrator agent that handles the entire planning process.**
+**This skill spawns a single orchestrator agent that handles the entire War Room planning process.**
 
 ## Step 1: Validate Prerequisites
 
 Read `docs/office/session.yaml`. If status is not `imagine_complete`, stop and say "Run /imagine first."
 
-## Step 2: Spawn Plan Orchestrator
+## Step 2: Spawn War Room Orchestrator
 
 Use the Task tool now:
 
@@ -19,7 +19,7 @@ Use the Task tool now:
 Task tool:
   subagent_type: office:agent-organizer
   prompt: |
-    You are orchestrating the /plan phase. Execute these steps IN ORDER.
+    You are orchestrating the /warroom phase. Execute these steps IN ORDER.
 
     ## STEP A: Read All Design Documents
 
@@ -247,7 +247,7 @@ Task tool:
     - docs/office/05-implementation-spec.md
     - docs/office/session.yaml (updated)
 
-    Confirm: "Plan phase complete. Ready for /build"
+    Confirm: "War Room phase complete. Ready for /build"
 ```
 
 ## Step 3: After Orchestrator Completes
@@ -258,4 +258,4 @@ Verify the files were created:
 ls docs/office/plan.md docs/office/tasks.yaml docs/office/05-implementation-spec.md
 ```
 
-Tell the user: "Plan complete! Review the artifacts, then /build when ready."
+Tell the user: "War Room complete! Review the artifacts, then /build when ready."

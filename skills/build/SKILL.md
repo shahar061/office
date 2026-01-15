@@ -7,11 +7,11 @@ description: "Execute implementation plan with agent pool in isolated worktrees.
 
 ## Overview
 
-The `/build` skill executes the implementation plan from `/plan` using an agent pool. Each feature gets an isolated worktree, and domain-specialized agents pick up tasks from a queue.
+The `/build` skill executes the implementation plan from `/warroom` using an agent pool. Each feature gets an isolated worktree, and domain-specialized agents pick up tasks from a queue.
 
 ## Prerequisites
 
-Requires completed `/plan` session with:
+Requires completed `/warroom` session with:
 - `docs/office/tasks.yaml` (feature-grouped structure)
 - `docs/office/05-implementation-spec.md` (TDD steps)
 - `docs/office/session.yaml` with `status: plan_complete`
@@ -21,9 +21,9 @@ Requires completed `/plan` session with:
 ### 1. Session Validation (Agent Organizer)
 
 Check session state:
-- If `status != plan_complete`: "Run /plan first to create implementation plan."
-- If tasks.yaml missing: "Missing tasks.yaml. Run /plan to complete planning."
-- If implementation-spec missing: "Missing implementation spec. Run /plan to complete planning."
+- If `status != plan_complete`: "Run /warroom first to create implementation plan."
+- If tasks.yaml missing: "Missing tasks.yaml. Run /warroom to complete planning."
+- If implementation-spec missing: "Missing implementation spec. Run /warroom to complete planning."
 - If valid: Continue to configuration
 
 ### 2. Resume Check

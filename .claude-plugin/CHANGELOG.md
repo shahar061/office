@@ -2,6 +2,16 @@
 
 All notable changes to the Office plugin will be documented in this file.
 
+## [0.2.34] - 2026-01-15
+
+### Changed
+
+- **Renamed /plan to /warroom**: Avoid potential conflict with Claude Code's built-in plan mode
+  - `commands/plan.md` → `commands/warroom.md`
+  - `skills/plan/` → `skills/warroom/`
+  - Updated all references in imagine, build, and README
+  - Command is now `/office:warroom`
+
 ## [0.2.33] - 2026-01-15
 
 ### Changed

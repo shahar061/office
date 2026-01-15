@@ -43,7 +43,7 @@ After the Agent Organizer task completes:
 
 - **"new"** → Go to Step 3
 - **"resuming"** → Spawn the agent for the returned `current_phase`
-- **"complete"** → Tell user: "Design phase complete. Run /plan to continue."
+- **"complete"** → Tell user: "Design phase complete. Run /warroom to continue."
 
 ## Step 3: Spawn CEO for Discovery Phase
 
@@ -112,7 +112,7 @@ Generated design documents:
 Co-Authored-By: Office Plugin <noreply@anthropic.com>"
 ```
 
-3. Tell user: "Design phase complete! Documents committed. Ready to run /plan?"
+3. Tell user: "Design phase complete! Documents committed. Ready to run /warroom?"
 
 ---
 
