@@ -2,6 +2,25 @@
 
 All notable changes to the Office plugin will be documented in this file.
 
+## [0.2.40] - 2026-01-15
+
+### Added
+
+- **Parallel implementation spec generation**: New Step 4 in warrooming generates TDD specs in parallel
+  - Spawns N Team Lead agents (one per phase) after tasks.yaml is created
+  - Each agent writes to `spec/phase_{N}_{name}/spec.md`
+  - Runs in parallel with DevOps (env setup)
+  - Full TDD format: test → fail → implement → pass → commit
+  - 4-5x speedup vs sequential generation
+  - Includes error handling and retry for failed phases
+
+### Changed
+
+- **Warrooming flow restructured**: Step 3 (Team Lead) now completes before Step 4
+  - Step 3: Team Lead creates tasks.yaml (must finish first)
+  - Step 4: DevOps + N Team Leads run in parallel
+  - Specs depend on tasks.yaml, so sequential dependency is required
+
 ## [0.2.39] - 2026-01-15
 
 ### Fixed
