@@ -12,7 +12,7 @@ Task tool (general-purpose):
     You are implementing: [task-id] - [task-title]
 
     Worktree: [worktree-path]
-    Spec: Read docs/office/05-implementation-spec.md section "[task-id]"
+    Spec: Read [spec-file-path] section "[task-id]"
 
     Files to modify:
     - [file1]
@@ -56,7 +56,8 @@ Task tool (general-purpose):
 | `[task-id]` | From tasks.yaml |
 | `[task-title]` | From tasks.yaml |
 | `[worktree-path]` | Feature worktree location |
-| `[file1]`, `[file2]` | From implementation-spec.md task section |
+| `[spec-file-path]` | `spec/phase_{N}_{name}/spec.md` based on task's phase |
+| `[file1]`, `[file2]` | From spec.md task section |
 
 ## Expected Outputs
 

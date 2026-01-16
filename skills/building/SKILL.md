@@ -19,7 +19,7 @@ Autonomous execution of the implementation plan from `/warroom`. Each task runs 
 
 Requires completed `/warroom` session with:
 - `docs/office/tasks.yaml` - Feature-grouped task structure
-- `docs/office/05-implementation-spec.md` - TDD steps per task
+- `spec/phase_*/spec.md` - TDD implementation specs (one per phase)
 - `docs/office/session.yaml` with `status: plan_complete`
 
 ## Startup
@@ -30,7 +30,7 @@ Requires completed `/warroom` session with:
 Check:
   - session.yaml exists with status: plan_complete
   - tasks.yaml exists
-  - 05-implementation-spec.md exists
+  - spec/phase_*/spec.md exists (at least one)
 
 If any missing:
   "Run /warroom first to create implementation plan."

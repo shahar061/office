@@ -13,7 +13,7 @@ Task tool (general-purpose):
 
     ## What Was Requested
 
-    [Full task spec text from implementation-spec.md]
+    [Full task spec text from phase spec.md]
 
     ## What Was Built
 
@@ -49,7 +49,7 @@ Task tool (general-purpose):
 |----------|--------|
 | `[task-id]` | From current task |
 | `[task-title]` | From tasks.yaml |
-| `[Full task spec text]` | Copy from implementation-spec.md |
+| `[Full task spec text]` | Copy from `spec/phase_{N}_{name}/spec.md` |
 | `[from implementer report]` | Files from implementer's DONE response |
 | `[commit SHA]` | From implementer's DONE response |
 | `[worktree-path]` | Feature worktree location |
