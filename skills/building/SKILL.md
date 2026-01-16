@@ -214,6 +214,30 @@ started_at: [ISO timestamp]
 Use the Skill tool: skill: "office:dashboard"
 ```
 
+### 8. Extract Phase Dependencies
+
+Extract phase-level dependencies from tasks.yaml (without reading full file):
+
+```bash
+# Get phase IDs and their depends_on
+grep -E "^- id:|^  depends_on:" docs/office/tasks.yaml | paste - - | \
+  sed 's/- id: //; s/  depends_on: /|/'
+```
+
+Example output:
+```
+phase-1|[]
+phase-2|[phase-1]
+phase-3|[phase-1]
+phase-4|[phase-2, phase-3]
+```
+
+Parse output to build phase dependency graph:
+- Phases with `depends_on: []` → ready immediately (can start in parallel)
+- Phases with dependencies → wait until all dependencies complete and merge
+
+Store dependency graph in memory for orchestration. Do NOT read full tasks.yaml.
+
 ## Main Loop (Sequential Phases)
 
 **Key principle:** Phases run sequentially by invoking `/phase-execution` skill. Tasks within each phase run in parallel (skill spawns background subagents).
