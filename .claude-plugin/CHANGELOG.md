@@ -2,6 +2,18 @@
 
 All notable changes to the Office plugin will be documented in this file.
 
+## [0.2.52] - 2026-01-16
+
+### Added
+
+- **Permission priming for background agents**: Dynamic permission granting at `/build` startup
+  - Warroom now extracts command prefixes from spec files (Step 3g)
+  - Adds `required_permissions` section to `tasks.yaml`
+  - Build startup primes permissions by running check commands (npm --version, git --version, etc.)
+  - Background agents inherit approved permissions from main session
+  - Eliminates need for manual `.claude/settings.local.json` editing and Claude Code restart
+  - Fallback inference from project files (package.json, Cargo.toml, etc.)
+
 ## [0.2.51] - 2026-01-16
 
 ### Changed
