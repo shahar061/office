@@ -2,6 +2,15 @@
 
 All notable changes to the Office plugin will be documented in this file.
 
+## [0.2.54] - 2026-01-16
+
+### Changed
+
+- **Refined /imagine agent interaction patterns**: Optimized dialogue flow for each phase
+  - Product Manager: Offers autonomy choice (draft PRD vs collaborate), uses batched questions (2-3 per batch)
+  - Market Researcher: Now non-interactive (intro → research → summary), no user dialogue needed
+  - Chief Architect: Asks tech stack autonomy + budget upfront, then either autonomous design or one-at-a-time with recommendations
+
 ## [0.2.53] - 2026-01-16
 
 ### Fixed
