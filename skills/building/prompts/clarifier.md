@@ -49,4 +49,4 @@ Task tool (general-purpose):
 
 - Clarifier uses Opus model (configurable) for deep codebase reasoning
 - Should be invoked rarely if implementation spec is good
-- On FLAG, the orchestrator pauses the feature and asks the user
+- On FLAG, the orchestrator pauses the phase and asks the user

@@ -11,7 +11,7 @@ Autonomous execution of the implementation plan from `/warroom`. Each task runs 
 
 **Key principles:**
 - Features run in **parallel** (background tasks, isolated worktrees)
-- Tasks run **sequentially** within a feature
+- Tasks run **sequentially** within a phase
 - Each subagent is **fresh** (no inherited context)
 - **No man-in-loop** unless critical blocker (flag)
 
@@ -60,7 +60,7 @@ Ask user (use AskUserQuestion tool):
 - `fast` - Sonnet/Sonnet/Haiku/Haiku
 - `quality` - Opus/Opus/Sonnet/Sonnet
 
-**Max parallel features:** (default: 3)
+**Max parallel phases:** (default: 3)
 
 **Retry limit:** (default: 3)
 
@@ -76,14 +76,14 @@ build:
   config:
     completion_policy: [selected]
     retry_limit: [selected]
-    max_parallel_features: [selected]
+    max_parallel_phases: [selected]
     models:
       implementer: [from preset]
       clarifier: [from preset]
       spec_reviewer: [from preset]
       code_reviewer: [from preset]
 
-features: []
+phases: []
 flags: []
 ```
 
@@ -98,38 +98,38 @@ Use the Skill tool: skill: "office:dashboard"
 ## Main Loop
 
 ```
-While features remain incomplete:
+While phases remain incomplete:
 
-  1. Find ready features:
+  1. Find ready phases:
      - Status is 'pending'
-     - All depends_on features are 'completed'
+     - All depends_on phases are 'completed'
 
-  2. Dispatch ready features in parallel:
+  2. Dispatch ready phases in parallel:
      - Create worktree (superpowers:using-git-worktrees)
-     - Start feature-executor as background task
-     - Update build-state.yaml: feature status = in_progress
+     - Start phase-executor as background task
+     - Update build-state.yaml: phase status = in_progress
 
   3. Monitor background tasks:
      - Poll for completion or flags
      - On flag: Handle flag (see Flag Handling)
-     - On completion: Check newly unblocked features
+     - On completion: Check newly unblocked phases
 
-  4. Repeat until all features completed or aborted
+  4. Repeat until all phases completed or aborted
 ```
 
-### Dispatching Features
+### Dispatching Phases
 
-**IMPORTANT:** To run features in parallel, invoke multiple Task tools in a SINGLE message.
+**IMPORTANT:** To run phases in parallel, invoke multiple Task tools in a SINGLE message.
 
 ```yaml
-For each ready feature:
+For each ready phase:
   Task tool:
     subagent_type: general-purpose
     run_in_background: true
     model: sonnet
-    description: "Execute feature: [feature-id]"
+    description: "Execute phase: [phase-id]"
     prompt: |
-      Execute feature [feature-id] in worktree [worktree-path].
+      Execute phase [phase-id] in worktree [worktree-path].
 
       Tasks to complete (in order):
       [list of task-ids from tasks.yaml]
@@ -204,7 +204,7 @@ Flags are the **only** time human intervention is needed.
    🚩 FLAG: [type]
 
    Task: [task-id] - [task-title]
-   Feature: [feature-id]
+   Phase: [phase-id]
 
    [Context from flag payload]
 
@@ -212,13 +212,13 @@ Flags are the **only** time human intervention is needed.
    [1] Provide guidance
    [2] Skip task
    [3] Accept as-is
-   [4] Abort feature
+   [4] Abort phase
 
 3. On user choice:
-   - Guidance: Resume feature with user's input
+   - Guidance: Resume phase with user's input
    - Skip: Mark task skipped, continue to next
    - Accept: Mark task completed with warnings
-   - Abort: Mark feature aborted, continue others
+   - Abort: Mark phase aborted, continue others
 ```
 
 ### Severity Behavior
@@ -230,12 +230,12 @@ Flags are the **only** time human intervention is needed.
 
 ## Completion
 
-### On Feature Complete
+### On Phase Complete
 
 ```yaml
 Apply completion policy:
   auto-merge:
-    - Merge feature branch to main
+    - Merge phase branch to main
     - Delete worktree
   pr:
     - Create pull request
@@ -245,7 +245,7 @@ Apply completion policy:
     - Ask: "Feature [id] complete. Review and continue?"
 
 Invoke: superpowers:finishing-a-development-branch
-Check: Any blocked features now unblocked?
+Check: Any blocked phases now unblocked?
 ```
 
 ### On All Features Complete
