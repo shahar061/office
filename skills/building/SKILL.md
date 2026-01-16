@@ -89,7 +89,73 @@ Ask user (use AskUserQuestion tool):
 
 **Retry limit:** (default: 3)
 
-### 5. Initialize State
+### 5. Request Permissions
+
+**CRITICAL:** Background subagents auto-deny any tool calls that require permission. You MUST request permissions upfront for the build to work.
+
+Use the `ExitPlanMode` tool with `allowedPrompts` to request session-wide permissions:
+
+```yaml
+ExitPlanMode:
+  allowedPrompts:
+    - tool: Bash
+      prompt: "run npm and npx commands"
+    - tool: Bash
+      prompt: "run git commands"
+    - tool: Bash
+      prompt: "run build and test commands"
+    - tool: Bash
+      prompt: "run package manager commands (yarn, pnpm)"
+```
+
+**Why this is needed:**
+- Phase executors run with `run_in_background: true` for parallelism
+- Background agents cannot prompt for permissions interactively
+- Without pre-approved permissions, all Bash/Write/Edit calls fail silently
+- `allowedTools` in agent config only limits available tools, doesn't grant permissions
+
+**Note:** The user will see a permission approval prompt. If denied, fall back to sequential foreground execution.
+
+**Fallback - Manual Permission Configuration:**
+
+If `ExitPlanMode` doesn't work (e.g., not in plan mode), instruct the user to add permissions to their project's `.claude/settings.local.json`:
+
+```json
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm:*)",
+      "Bash(npx:*)",
+      "Bash(yarn:*)",
+      "Bash(pnpm:*)",
+      "Bash(git:*)",
+      "Bash(node:*)",
+      "Bash(tsc:*)",
+      "Bash(jest:*)",
+      "Bash(vitest:*)",
+      "Bash(pytest:*)",
+      "Bash(cargo:*)",
+      "Bash(go:*)",
+      "Bash(make:*)"
+    ]
+  }
+}
+```
+
+Or for broader (less secure) access:
+```json
+{
+  "permissions": {
+    "allow": [
+      "Bash(*)"
+    ]
+  }
+}
+```
+
+After adding permissions, user must restart Claude Code for changes to take effect.
+
+### 6. Initialize State
 
 Create `docs/office/build-state.yaml` with initial structure.
 
@@ -102,7 +168,7 @@ grep -E "^- id:|^  name:" docs/office/tasks.yaml | paste - - | \
 
 Then write the build-state.yaml with phases set to `pending`.
 
-### 6. Start Dashboard
+### 7. Start Dashboard
 
 **REQUIRED:** Invoke `/office:dashboard` skill to start build dashboard.
 
@@ -167,7 +233,7 @@ This keeps build-state.yaml out of orchestrator context entirely.
 **IMPORTANT:** To run phases in parallel, invoke multiple Task tools in a SINGLE message.
 
 **CRITICAL:**
-- Use `office:phase-executor` agent - it has `allowedTools` configured for autonomous operation
+- Use `office:phase-executor` agent - it has `allowedTools` configured (tools are available, permissions granted by step 5)
 - Embed prompt templates directly (subagents cannot access plugin cache files)
 
 ```yaml
