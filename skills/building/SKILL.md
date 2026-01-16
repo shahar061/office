@@ -238,36 +238,106 @@ Parse output to build phase dependency graph:
 
 Store dependency graph in memory for orchestration. Do NOT read full tasks.yaml.
 
-## Main Loop (Sequential Phases)
+## Main Loop (Parallel Phases with Worktrees)
 
-**Key principle:** Phases run sequentially by invoking `/phase-execution` skill. Tasks within each phase run in parallel (skill spawns background subagents).
+**Key principle:** Independent phases run in parallel in separate worktrees. Tasks within each phase run sequentially (handled by phase-execution skill).
 
 ```
-For each phase in order:
+While phases remain incomplete:
 
-  1. Announce phase start:
-     - "Starting phase: {phase-id} - {phase-name}"
+  1. Find ready phases:
+     - Status is 'pending'
+     - All depends_on phases are 'completed' (merged to build branch)
 
-  2. Invoke /phase-execution skill:
-     - Use Skill tool: skill: "office:phase-execution"
-     - The skill handles DAG execution, task parallelism, status updates
-     - Skill runs in FOREGROUND (main context) - blocks until phase completes
+  2. For each ready phase IN PARALLEL (single message, multiple Task tools):
 
-  3. On skill return, check result:
-     - PHASE_COMPLETE: Apply completion policy
-     - FLAG: Handle flag (see Flag Handling section)
+     a. Create worktree from build branch:
+        git worktree add .worktrees/phase-{id} -b phase/{id} build/${session_id}
 
-  4. Apply completion policy:
-     - checkpoint: Ask user to review, wait for approval
-     - auto-merge: Merge phase branch to main automatically
-     - pr: Create pull request for the phase branch
+     b. Dispatch phase execution (foreground subagent per phase):
+        Task tool:
+          subagent_type: general-purpose
+          description: "Execute phase: {phase-id}"
+          prompt: |
+            Execute phase {phase-id} in worktree.
 
-  5. Continue to next phase
+            Working directory: {project_path}/.worktrees/phase-{id}
+            Phase spec: spec/phase_{N}_{name}/spec.md
+            Tasks file: docs/office/tasks.yaml (your phase only)
+
+            Run tasks SEQUENTIALLY (one at a time):
+            - For each task: implement (TDD) → self-review → commit
+            - All commits go to phase/{id} branch in your worktree
+
+            When all tasks complete:
+            PHASE_COMPLETE: {phase-id}
+
+            On blocking issue:
+            FLAG: {type} | {task-id} | {description}
+
+  3. Wait for ANY phase to complete:
+     - Poll TaskOutput for each in-progress phase (block=false)
+     - On completion, process result
+
+  4. On PHASE_COMPLETE:
+
+     a. Switch to build branch and merge phase:
+        git checkout build/${session_id}
+        git merge phase/{id} --no-ff -m "Merge phase: {phase-name}"
+
+     b. If merge conflict:
+        - Read conflicting files to understand the conflict
+        - Resolve based on phase context (you have full visibility)
+        - git add -A && git commit -m "Resolve conflicts: phase {id}"
+
+     c. Cleanup worktree:
+        git worktree remove .worktrees/phase-{id}
+        git branch -d phase/{id}
+
+     d. Update phase status to 'completed'
+
+     e. Check if new phases are now ready (their dependencies now met)
+
+  5. On FLAG:
+     - Present to user with options (see Flag Handling section)
+     - Handle user choice
+     - Resume or skip as directed
+
+All phases complete → Continue to Completion section
 ```
 
-**Why sequential phases:** Skills run in main context (foreground). Only one skill can run at a time. Tasks within a phase provide parallelism via background subagents.
+### Dispatching Multiple Phases in Parallel
 
-**Why this works:** The `/phase-execution` skill runs in the main conversation context, so it CAN spawn background subagents for parallel task execution. Background subagents cannot spawn nested subagents, but they don't need to - each task subagent executes the full 4-stage pipeline inline.
+**CRITICAL:** To run independent phases in parallel, dispatch multiple Task tools in a SINGLE message:
+
+```
+Example: phase-1 and phase-3 both have depends_on: []
+
+[Task tool: Execute phase-1 in .worktrees/phase-1]
+[Task tool: Execute phase-3 in .worktrees/phase-3]
+
+Both dispatch in same message → both run simultaneously
+```
+
+Each phase works in its own worktree on its own branch - no conflicts possible.
+
+### Conflict Resolution
+
+When merging a phase to build branch, conflicts can occur if:
+- Two parallel phases modified the same file
+- A phase modified a file that was also changed in a dependency
+
+The orchestrator (you) resolves conflicts because:
+- You have context of all phases
+- You can read both versions and understand intent
+- Phase subagents only know their own scope
+
+Resolution approach:
+1. `git diff --name-only --diff-filter=U` to list conflicted files
+2. Read each conflicted file
+3. Understand what each phase was trying to do
+4. Edit to combine both changes appropriately
+5. `git add` and commit the resolution
 
 ## State Management
 
