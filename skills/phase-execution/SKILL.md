@@ -222,19 +222,31 @@ Task tool:
 
 ## Status Updates
 
-Update `status.yaml` directly using sed (atomic single-field update):
+**Use the Edit tool** (NOT sed/bash) to update `status.yaml`:
 
-```bash
-# Update task status
-sed -i '' "s/  {task_id}: .*/  {task_id}: {status}/" \
-    {project_path}/docs/office/build/phase-{id}/status.yaml
+```yaml
+Edit tool:
+  file_path: {project_path}/docs/office/build/phase-{id}/status.yaml
+  old_string: "  {task_id}: {old_status}"
+  new_string: "  {task_id}: {new_status}"
 ```
 
-Append to `progress.log`:
+This avoids shell command issues (sed waiting on stdin if malformed).
 
-```bash
-echo "$(date -Iseconds) {EVENT}" >> {project_path}/docs/office/build/phase-{id}/progress.log
+For `progress.log`, use Write tool to append:
+
+```yaml
+# Read current content first, then write with appended line
+Read: {project_path}/docs/office/build/phase-{id}/progress.log
+Write: {existing_content}\n{timestamp} {EVENT}
 ```
+
+Or if you must use Bash for logging (simpler for append):
+```bash
+echo "$(date -Iseconds) {EVENT}" >> "{project_path}/docs/office/build/phase-{id}/progress.log"
+```
+
+**Never chain multiple sed commands with `&&`** - each file operation should be separate.
 
 ## Waiting for Tasks
 
