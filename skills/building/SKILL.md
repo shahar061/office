@@ -7,13 +7,15 @@ description: "Execute implementation plan with autonomous subagent pipeline. Two
 
 ## Overview
 
-Autonomous execution of the implementation plan from `/warroom`. Each task runs through a 4-subagent pipeline: Implementer → Clarifier (if needed) → Spec-Reviewer → Code-Reviewer.
+Autonomous execution of the implementation plan from `/warroom`. Each phase gets an isolated worktree for safe parallel execution.
 
 **Key principles:**
-- Phases run **sequentially** (invokes `/phase-execution` skill for each)
-- Tasks run **in parallel** within a phase (DAG-based, spawned by skill)
-- Each task subagent is **fresh** (no inherited context)
-- **No man-in-loop** unless critical blocker (flag)
+- Build branch isolates all work from main
+- Each phase gets its own **worktree** (isolated)
+- Independent phases run **in parallel** (separate worktrees)
+- Tasks run **sequentially** within a phase (safe commits)
+- Orchestrator merges phases and resolves conflicts
+- Final output is a **PR to main**
 
 ## Prerequisites
 
@@ -77,18 +79,35 @@ Ask user (use AskUserQuestion tool):
 
 **Retry limit:** (default: 3)
 
-### 4. Prime Permissions
+### 4. Create Build Branch
+
+Create an isolated branch for all build work:
+
+```bash
+# Generate session ID
+session_id=$(date +%Y%m%d-%H%M%S)
+
+# Create and push build branch
+git checkout -b build/${session_id}
+git push -u origin build/${session_id}
+
+echo "Build branch: build/${session_id}"
+```
+
+Store `session_id` for later use (worktree names, PR).
+
+### 5. Prime Permissions
 
 **CRITICAL:** Task subagents run in background and auto-deny permission prompts. Prime permissions upfront by running check commands.
 
-**4a. Extract permissions from tasks.yaml:**
+**5a. Extract permissions from tasks.yaml:**
 
 ```bash
 # Get required permissions list
 sed -n '/^required_permissions:/,/^[a-z]/{ /^  - /p }' docs/office/tasks.yaml | sed 's/^  - //' | head -20
 ```
 
-**4b. Fallback if no permissions listed:**
+**5b. Fallback if no permissions listed:**
 
 If `required_permissions` section is missing (older tasks.yaml), infer from project:
 
@@ -102,7 +121,7 @@ If `required_permissions` section is missing (older tasks.yaml), infer from proj
 [ -f pyproject.toml ] && echo "pip" && echo "python"
 ```
 
-**4c. Display to user:**
+**5c. Display to user:**
 
 ```
 Preparing build permissions...
@@ -114,7 +133,7 @@ Required commands for this build:
 Requesting permissions now. Please approve each prompt.
 ```
 
-**4d. Run permission check commands:**
+**5d. Run permission check commands:**
 
 For each permission, run the corresponding check command:
 
@@ -138,7 +157,7 @@ For each permission, run the corresponding check command:
 
 Run each check command. User will see permission prompts and approve them.
 
-**4e. Confirm and proceed:**
+**5e. Confirm and proceed:**
 
 After all check commands complete:
 
@@ -146,7 +165,7 @@ After all check commands complete:
 All permissions granted. Starting build...
 ```
 
-**4f. Error handling:**
+**5f. Error handling:**
 
 If a check command fails (command not found), warn but continue:
 
@@ -157,7 +176,7 @@ Continue anyway? [Y/n]
 
 If user denies a permission prompt, that command won't work for background agents. Warn and ask whether to continue.
 
-### 5. Initialize Build Directory
+### 6. Initialize Build Directory
 
 Create the build output structure:
 
@@ -187,7 +206,7 @@ started_at: [ISO timestamp]
 
 **Note:** Each phase executor will create its own `docs/office/build/phase-{id}/` directory with `status.yaml` and `progress.log`. The orchestrator does NOT create per-phase directories.
 
-### 6. Start Dashboard
+### 7. Start Dashboard
 
 **REQUIRED:** Invoke `/office:dashboard` skill to start build dashboard.
 
