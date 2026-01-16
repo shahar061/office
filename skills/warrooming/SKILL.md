@@ -238,6 +238,51 @@ Report status table (do NOT include file contents):
 | DevOps | ✓ | docs/office/plan.md (env section) |
 ```
 
+### 3g: Extract Required Permissions
+
+Extract shell command prefixes from generated specs for build-time permission priming.
+
+**Run extraction command:**
+
+```bash
+# Extract unique command prefixes from all bash code blocks in specs
+grep -hE '^\s*(npm|npx|yarn|pnpm|git|node|cargo|go|python|pip|pytest|make|tsc|jest|vitest)\b' spec/phase_*/spec.md 2>/dev/null | \
+  sed 's/^\s*//' | cut -d' ' -f1 | sort -u
+```
+
+**Fallback inference from project files (if no specs or empty result):**
+
+```bash
+# Detect from project config files
+[ -f package.json ] && echo "npm"
+[ -f yarn.lock ] && echo "yarn"
+[ -f pnpm-lock.yaml ] && echo "pnpm"
+[ -f Cargo.toml ] && echo "cargo"
+[ -f go.mod ] && echo "go"
+[ -f requirements.txt ] && echo "pip" && echo "python"
+[ -f pyproject.toml ] && echo "pip" && echo "python"
+```
+
+**Add to tasks.yaml:**
+
+Use sed to insert `required_permissions` at the top of tasks.yaml:
+
+```bash
+# Get the extracted permissions as a list
+PERMS=$(grep -hE '^\s*(npm|npx|yarn|pnpm|git|node|cargo|go|python|pip|pytest|make|tsc|jest|vitest)\b' spec/phase_*/spec.md 2>/dev/null | sed 's/^\s*//' | cut -d' ' -f1 | sort -u)
+
+# Create YAML list format
+YAML_PERMS=$(echo "$PERMS" | sed 's/^/  - /' | tr '\n' '\n')
+
+# Prepend to tasks.yaml
+{
+  echo "required_permissions:"
+  echo "$PERMS" | sed 's/^/  - /'
+  echo ""
+  cat docs/office/tasks.yaml
+} > docs/office/tasks.yaml.tmp && mv docs/office/tasks.yaml.tmp docs/office/tasks.yaml
+```
+
 ## Step 4: Finalize
 
 ### 4a: Final Validation
