@@ -1,25 +1,32 @@
 ---
 name: phase-execution
-description: "Execute a single phase with DAG-based parallel task execution. Invoked by /build for each phase sequentially."
+description: "Execute a single phase with sequential task execution in an isolated worktree."
 ---
 
 # /phase-execution - Execute Single Phase
 
-Runs all tasks in a phase with **parallel execution based on dependency DAG**. Each task goes through the 4-subagent pipeline.
+Runs all tasks in a phase **sequentially** within an isolated worktree. Each task goes through the 4-stage pipeline inline: Implement → Self-Review (Spec) → Self-Review (Quality) → Commit.
 
 **Context strategy:**
-- Skill runs in main context (can spawn subagents)
-- Read tasks.yaml ONCE to build dependency graph
-- Push all implementation work to subagents
-- Subagents are fresh (no context accumulation)
+- Phase runs in its own worktree (created by orchestrator)
+- Tasks run ONE AT A TIME (no parallel execution within phase)
+- All commits go to the phase branch
+- Orchestrator handles merge to build branch after phase completes
+
+**Why sequential?**
+- No git conflicts within the phase
+- No race conditions on commits
+- Simpler and more reliable
+- Parallel execution happens at PHASE level (multiple worktrees)
 
 ## Input (from orchestrator)
 
-The orchestrator passes these via skill invocation context:
+The orchestrator provides context before invoking this skill:
 - `phase_id` - Which phase to execute
-- `project_path` - Absolute path to project root
-- `models` - Model config (implementer, clarifier, spec_reviewer, code_reviewer)
-- `retry_limit` - Max retry attempts per stage
+- `worktree_path` - Absolute path to this phase's worktree
+- `project_path` - Absolute path to main project root
+- `models` - Model config (for reference, but tasks run inline)
+- `retry_limit` - Max retry attempts per stage (default: 3)
 
 ## Initialization
 
@@ -39,9 +46,9 @@ mkdir -p {project_path}/docs/office/build/phase-{id}/
 Read `{project_path}/docs/office/tasks.yaml` and extract:
 - Task IDs for this phase
 - Dependencies for each task
-- Task descriptions (for subagent prompts)
+- Task descriptions
 
-Store in memory as dependency graph. **Do NOT re-read this file.**
+Store in memory for sequential processing. **Do NOT re-read this file.**
 
 ### 3. Initialize status.yaml
 
@@ -62,162 +69,104 @@ tasks:
 echo "$(date -Iseconds) PHASE_START" >> {project_path}/docs/office/build/phase-{id}/progress.log
 ```
 
-## DAG Execution Algorithm
+## Sequential Execution Algorithm
+
+Tasks are executed in dependency order, one at a time:
 
 ```python
-completed = set()
-in_progress = {}  # task_id -> agent_id
-failed = set()
+for task in sorted_by_dependencies(phase_tasks):
+    # 1. Start task
+    log_event(f"TASK_START:{task.id}")
+    update_status(task.id, "in_progress")
 
-while incomplete_tasks_remain():
-    # 1. Find ready tasks
-    ready = [t for t in tasks
-             if t.id not in completed
-             and t.id not in in_progress
-             and t.id not in failed
-             and all(dep in completed for dep in t.dependencies)]
+    # 2. Execute 4-stage pipeline (inline - see Task Execution section)
+    result = execute_task_inline(task)
 
-    # 2. Spawn ALL ready tasks in parallel (single message, multiple Task calls)
-    for task in ready:
-        agent_id = dispatch_task_pipeline(task)  # background subagent
-        in_progress[task.id] = agent_id
-        update_status(task.id, "in_progress")
-        log_event(f"TASK_START:{task.id}")
-
-    # 3. Wait for ANY task to complete
-    for task_id, agent_id in in_progress.items():
-        result = TaskOutput(agent_id, block=false, timeout=1000)
-        if result.finished:
-            handle_completion(task_id, result)
-            break
-    else:
-        # None finished yet, brief wait then retry
-        sleep(5 seconds)
-        continue
-
-    # 4. Handle completion
+    # 3. Handle result
     if result.success:
-        completed.add(task_id)
-        update_status(task_id, "completed")
-        log_event(f"TASK_DONE:{task_id}")
+        update_status(task.id, "completed")
+        log_event(f"TASK_DONE:{task.id}")
+
+    elif result.is_blocking_flag:
+        # Return flag to orchestrator immediately
+        output: FLAG: {type} | {task.id} | {description}
+        return  # Stop phase execution
+
     else:
-        # Handle failure/flag
-        if is_blocking(result):
-            output: FLAG: {type} | {task_id} | {description}
-            return  # Let orchestrator handle
-        else:
-            failed.add(task_id)
-            log_event(f"TASK_FAIL:{task_id}")
+        # Non-blocking failure - log and continue
+        update_status(task.id, "failed")
+        log_event(f"TASK_FAIL:{task.id}")
 
-    del in_progress[task_id]
-
-# All tasks complete
+# All tasks processed
 log_event("PHASE_COMPLETE")
 update_status_file(status="completed")
 output: PHASE_COMPLETE: {phase_id}
 ```
 
-## Dispatching Task Subagents
+## Task Execution (Inline)
 
-**CRITICAL:** Spawn multiple tasks in a SINGLE message to maximize parallelism.
+**Execute each task directly** - do NOT spawn background subagents.
 
-**IMPORTANT:** Task subagents CANNOT spawn nested subagents (Claude Code limitation). Each task subagent must do all 4 stages INLINE within a single agent execution.
+For each task, follow this 4-stage pipeline:
 
-For each ready task, dispatch a background subagent:
+### Stage 1: IMPLEMENT
 
-```yaml
-Task tool:
-  subagent_type: general-purpose
-  model: {models.implementer}
-  run_in_background: true
-  description: "Execute task: {task-id}"
-  prompt: |
-    # Task Pipeline: {task-id}
+1. Read the spec section for this task from `spec/phase_{N}_{name}/spec.md`
+2. Follow TDD:
+   - Write failing test first
+   - Run test, verify it fails
+   - Write minimal implementation
+   - Run test, verify it passes
+3. If blocked (missing information):
+   - First search codebase for answers
+   - If still unclear: `FLAG: clarifier_blocked | {task-id} | {question}`
 
-    You are a task executor. Complete this task through a 4-stage pipeline.
-    **You must do all stages yourself - you CANNOT spawn subagents.**
+### Stage 2: SELF-REVIEW (Spec Compliance)
 
-    ## Context
-    Project: {project_path}
-    Phase spec: {project_path}/spec/phase_{N}_{name}/spec.md
-    Task: {task-id} - {task-description}
-    Acceptance criteria:
-    {acceptance_criteria}
+After implementing:
+1. Re-read the spec requirements
+2. Verify EACH acceptance criterion is met
+3. Check you didn't add unnecessary code (YAGNI)
 
-    ## Stage 1: IMPLEMENT
+If issues found:
+- Fix immediately, re-run tests
+- Max 3 fix attempts
+- After 3 failures: `FLAG: spec_review_exhausted | {task-id} | {issues}`
 
-    1. Read the spec section for this task
-    2. Follow TDD:
-       - Write failing test first
-       - Verify test fails (run it)
-       - Write implementation
-       - Verify test passes
-    3. Commit: "{task-id}: {description}"
+### Stage 3: SELF-REVIEW (Code Quality)
 
-    If you cannot proceed due to missing information:
-    - First, search the codebase for answers (grep, read files)
-    - If still unclear after searching, output:
-      FLAG: clarifier_blocked | {task-id} | {your question}
+Review your code for:
+- Readability and clarity
+- Test coverage
+- Consistency with codebase patterns
+- Security issues
+- Obvious bugs
 
-    ## Stage 2: SELF-REVIEW (Spec Compliance)
+If issues found:
+- Fix, re-run tests
+- Max 3 fix attempts
+- After 3: `FLAG: code_review_exhausted | {task-id} | {issues}` (WARNING only)
 
-    After implementing, review your own work:
-    - Re-read the spec requirements
-    - Verify EACH acceptance criterion is met
-    - Check you didn't add unnecessary code
+### Stage 4: COMMIT
 
-    If issues found:
-    - Fix them immediately
-    - Re-run tests
-    - Commit the fix
+```bash
+git add -A
+git commit -m "{task-id}: {description}"
+```
 
-    Max 3 fix attempts. If still failing after 3:
-    FLAG: spec_review_exhausted | {task-id} | {remaining issues}
+### Task Output
 
-    ## Stage 3: SELF-REVIEW (Code Quality)
+On success:
+```
+TASK_DONE: {task-id}
+Files: {list of files changed}
+Tests: {pass count} passed
+Commit: {sha}
+```
 
-    Review your code for:
-    - Code quality and readability
-    - Test coverage
-    - Consistency with codebase patterns
-    - Security issues
-    - Obvious bugs
-
-    If issues found:
-    - Fix them
-    - Re-run tests
-    - Commit
-
-    Max 3 fix attempts. If still failing after 3:
-    FLAG: code_review_exhausted | {task-id} | {remaining issues}
-    (This is a WARNING - task can still complete)
-
-    ## Stage 4: FINALIZE
-
-    1. Ensure all tests pass
-    2. Ensure code is committed
-    3. Output final status
-
-    ## Output Format
-
-    On success:
-    ```
-    TASK_DONE: {task-id}
-    Files: {list of files changed}
-    Tests: {pass count} passed
-    Commit: {sha}
-    ```
-
-    On blocking issue:
-    ```
-    FLAG: {type} | {task-id} | {description}
-    ```
-
-    Flag types:
-    - clarifier_blocked: Need human input (BLOCKING)
-    - spec_review_exhausted: Can't meet spec after 3 tries (BLOCKING)
-    - code_review_exhausted: Quality issues remain (WARNING)
-    - implementation_error: Unrecoverable error (BLOCKING)
+On blocking issue:
+```
+FLAG: {type} | {task-id} | {description}
 ```
 
 ## Status Updates
@@ -248,21 +197,6 @@ echo "$(date -Iseconds) {EVENT}" >> "{project_path}/docs/office/build/phase-{id}
 
 **Never chain multiple sed commands with `&&`** - each file operation should be separate.
 
-## Waiting for Tasks
-
-Use non-blocking TaskOutput in a loop:
-
-```yaml
-For each in_progress task:
-  TaskOutput:
-    task_id: {agent_id}
-    block: false
-    timeout: 1000
-
-  If task finished:
-    Process result and continue DAG
-```
-
 ## Output Format
 
 **After each task completes:**
@@ -285,9 +219,10 @@ FLAG: {flag_type} | {task-id} | {brief description}
 | Item | Cost | Notes |
 |------|------|-------|
 | Skill content | ~3k | One-time load |
-| tasks.yaml (phase portion) | ~500-1k | One-time read, stored in memory |
-| Status updates | ~50 each | sed commands, minimal |
-| TaskOutput checks | ~100 each | Non-blocking, brief results |
-| **Total per phase** | ~5-10k | Much less than full conversation |
+| tasks.yaml (phase portion) | ~500-1k | One-time read |
+| Spec file (phase) | ~2-5k | Read once per phase |
+| Task implementation | ~1-2k each | Inline execution |
+| Status updates | ~50 each | Edit tool |
+| **Total per phase** | ~10-20k | Depends on task count |
 
-Task subagents get **fresh context** - no accumulation in main conversation.
+All execution happens inline - no subagent overhead.
