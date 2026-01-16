@@ -2,6 +2,14 @@
 
 All notable changes to the Office plugin will be documented in this file.
 
+## [0.2.57] - 2026-01-16
+
+### Fixed
+
+- **Echo commands now auto-approved in /build**: Added `echo` and `git` as always-primed permissions
+  - These are needed for progress logging and commits regardless of project type
+  - Eliminates permission prompts blocking build execution
+
 ## [0.2.56] - 2026-01-16
 
 ### Changed
