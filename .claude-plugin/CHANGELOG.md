@@ -2,6 +2,15 @@
 
 All notable changes to the Office plugin will be documented in this file.
 
+## [0.2.44] - 2026-01-16
+
+### Fixed
+
+- **Build skill spec path**: Updated to use phase-based spec folders instead of single file
+  - Prerequisites now expect `spec/phase_*/spec.md` instead of `05-implementation-spec.md`
+  - Implementer prompt uses `[spec-file-path]` variable for phase-specific specs
+  - Spec-reviewer references phase spec.md for compliance checking
+
 ## [0.2.43] - 2026-01-16
 
 ### Changed
