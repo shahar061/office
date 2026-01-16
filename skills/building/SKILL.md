@@ -77,37 +77,82 @@ Ask user (use AskUserQuestion tool):
 
 **Retry limit:** (default: 3)
 
-### 4. Request Permissions
+### 4. Prime Permissions
 
-**CRITICAL:** Task subagents run in background and auto-deny permission prompts. Request permissions upfront.
+**CRITICAL:** Task subagents run in background and auto-deny permission prompts. Prime permissions upfront by running check commands.
 
-Instruct the user to add permissions to their project's `.claude/settings.local.json`:
+**4a. Extract permissions from tasks.yaml:**
 
-```json
-{
-  "permissions": {
-    "allow": [
-      "Bash(npm:*)",
-      "Bash(npx:*)",
-      "Bash(yarn:*)",
-      "Bash(pnpm:*)",
-      "Bash(git:*)",
-      "Bash(node:*)",
-      "Bash(tsc:*)",
-      "Bash(jest:*)",
-      "Bash(vitest:*)",
-      "Bash(pytest:*)",
-      "Bash(cargo:*)",
-      "Bash(go:*)",
-      "Bash(make:*)"
-    ]
-  }
-}
+```bash
+# Get required permissions list
+grep -A 50 "^required_permissions:" docs/office/tasks.yaml | grep "^  - " | sed 's/^  - //' | head -20
 ```
 
-Or for broader (less secure) access: `"Bash(*)"`.
+**4b. Fallback if no permissions listed:**
 
-After adding permissions, user must restart Claude Code for changes to take effect.
+If `required_permissions` section is missing (older tasks.yaml), infer from project:
+
+```bash
+[ -f package.json ] && echo "npm"
+[ -f Cargo.toml ] && echo "cargo"
+[ -f go.mod ] && echo "go"
+[ -f requirements.txt ] && echo "pip"
+```
+
+**4c. Display to user:**
+
+```
+Preparing build permissions...
+
+Required commands for this build:
+  - npm
+  - git
+
+Requesting permissions now. Please approve each prompt.
+```
+
+**4d. Run permission check commands:**
+
+For each permission, run the corresponding check command:
+
+| Permission | Check Command |
+|------------|---------------|
+| npm | `npm --version` |
+| npx | `npx --version` |
+| yarn | `yarn --version` |
+| pnpm | `pnpm --version` |
+| git | `git --version` |
+| node | `node --version` |
+| cargo | `cargo --version` |
+| go | `go version` |
+| python | `python --version` |
+| pip | `pip --version` |
+| pytest | `pytest --version` |
+| make | `make --version` |
+| tsc | `npx tsc --version` |
+| jest | `npx jest --version` |
+| vitest | `npx vitest --version` |
+
+Run each check command. User will see permission prompts and approve them.
+
+**4e. Confirm and proceed:**
+
+After all check commands complete:
+
+```
+All permissions granted. Starting build...
+```
+
+**4f. Error handling:**
+
+If a check command fails (command not found), warn but continue:
+
+```
+Warning: 'cargo' not found. Tasks requiring Rust may fail.
+Continue anyway? [Y/n]
+```
+
+If user denies a permission prompt, that command won't work for background agents. Warn and ask whether to continue.
 
 ### 5. Initialize Build Directory
 
