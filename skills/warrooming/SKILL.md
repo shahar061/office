@@ -271,9 +271,6 @@ Use sed to insert `required_permissions` at the top of tasks.yaml:
 # Get the extracted permissions as a list
 PERMS=$(grep -hE '^\s*(npm|npx|yarn|pnpm|git|node|cargo|go|python|pip|pytest|make|tsc|jest|vitest)\b' spec/phase_*/spec.md 2>/dev/null | sed 's/^\s*//' | cut -d' ' -f1 | sort -u)
 
-# Create YAML list format
-YAML_PERMS=$(echo "$PERMS" | sed 's/^/  - /' | tr '\n' '\n')
-
 # Prepend to tasks.yaml
 {
   echo "required_permissions:"

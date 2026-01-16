@@ -85,7 +85,7 @@ Ask user (use AskUserQuestion tool):
 
 ```bash
 # Get required permissions list
-grep -A 50 "^required_permissions:" docs/office/tasks.yaml | grep "^  - " | sed 's/^  - //' | head -20
+sed -n '/^required_permissions:/,/^[a-z]/{ /^  - /p }' docs/office/tasks.yaml | sed 's/^  - //' | head -20
 ```
 
 **4b. Fallback if no permissions listed:**
@@ -94,9 +94,12 @@ If `required_permissions` section is missing (older tasks.yaml), infer from proj
 
 ```bash
 [ -f package.json ] && echo "npm"
+[ -f yarn.lock ] && echo "yarn"
+[ -f pnpm-lock.yaml ] && echo "pnpm"
 [ -f Cargo.toml ] && echo "cargo"
 [ -f go.mod ] && echo "go"
-[ -f requirements.txt ] && echo "pip"
+[ -f requirements.txt ] && echo "pip" && echo "python"
+[ -f pyproject.toml ] && echo "pip" && echo "python"
 ```
 
 **4c. Display to user:**
