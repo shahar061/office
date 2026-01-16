@@ -85,13 +85,60 @@ Task tool:
     You MUST use the Edit tool. Do not just describe changes.
 ```
 
-Then spawn the next phase agent:
+Then spawn the next phase agent with explicit dialogue prompt:
 
-| Completed Phase | Next Agent               | Next Phase   |
-| --------------- | ------------------------ | ------------ |
-| discovery       | office:product-manager   | definition   |
-| definition      | office:market-researcher | validation   |
-| validation      | office:chief-architect   | architecture |
+### After Discovery → Spawn Product Manager
+
+```
+Task tool:
+  subagent_type: office:product-manager
+  prompt: |
+    Lead the Definition phase for /imagine.
+
+    Your job: Turn the Vision Brief into a detailed PRD through dialogue.
+    - Read docs/office/01-vision-brief.md first
+    - Ask the user about personas, user journeys, feature priorities
+    - Ask ONE question at a time
+    - Clarify edge cases and acceptance criteria
+
+    When ready, use the Write tool to create docs/office/02-prd.md.
+    Show the user what you wrote and confirm before finishing.
+```
+
+### After Definition → Spawn Market Researcher
+
+```
+Task tool:
+  subagent_type: office:market-researcher
+  prompt: |
+    Lead the Validation phase for /imagine.
+
+    Your job: Research the market and validate the product direction.
+    - Read docs/office/01-vision-brief.md and docs/office/02-prd.md
+    - Use WebSearch to research competitors and market trends
+    - Identify the unique selling proposition
+
+    When ready, use the Write tool to create docs/office/03-market-analysis.md.
+    Share key findings with the user before finishing.
+```
+
+### After Validation → Spawn Chief Architect
+
+```
+Task tool:
+  subagent_type: office:chief-architect
+  prompt: |
+    Lead the Architecture phase for /imagine.
+
+    Your job: Design the technical system through dialogue.
+    - Read all previous docs (01, 02, 03)
+    - Ask the user about technical constraints and preferences
+    - Ask ONE question at a time
+    - Recommend tech stack and justify choices
+
+    When ready, use the Write tool to create docs/office/04-system-design.md.
+    Review the architecture with the user before finishing.
+```
 
 ## Step 5: After Architecture Phase
 
