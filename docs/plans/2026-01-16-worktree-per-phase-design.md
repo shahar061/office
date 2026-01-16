@@ -180,3 +180,7 @@ The change is backwards compatible:
 - tasks.yaml structure unchanged
 - Phase dependencies already exist
 - Build configuration options remain the same
+
+---
+
+**Implementation:** [2026-01-16-worktree-per-phase-impl.md](./2026-01-16-worktree-per-phase-impl.md)
