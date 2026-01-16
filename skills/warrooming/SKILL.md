@@ -60,6 +60,58 @@ Task tool:
     Keep it focused - no TDD steps here.
 
     Write to `docs/office/tasks.yaml` using the Write tool.
+
+    ## Output Structure
+
+    The tasks.yaml MUST follow this structure with phase-level `depends_on`:
+
+    ```yaml
+    phases:
+      - id: phase-1
+        name: Project Setup
+        depends_on: []  # No dependencies - can start first
+        tasks:
+          - id: setup-001
+            description: Initialize project structure
+            agent: backend-engineer
+            depends_on: []
+            acceptance_criteria:
+              - Project directory created
+              - package.json initialized
+
+      - id: phase-2
+        name: Backend API
+        depends_on: [phase-1]  # Must wait for phase-1 to complete
+        tasks:
+          - id: api-001
+            description: Create user model
+            agent: backend-engineer
+            depends_on: []
+
+      - id: phase-3
+        name: Frontend UI
+        depends_on: [phase-1]  # Can run PARALLEL with phase-2
+        tasks:
+          - id: ui-001
+            description: Create app shell
+            agent: frontend-engineer
+            depends_on: []
+
+      - id: phase-4
+        name: Integration
+        depends_on: [phase-2, phase-3]  # Waits for BOTH
+        tasks:
+          - id: int-001
+            description: Connect frontend to API
+            agent: frontend-engineer
+            depends_on: []
+    ```
+
+    **Phase dependency rules:**
+    - Every phase MUST have a `depends_on` field (use `[]` if no dependencies)
+    - Infer from task relationships: if any task in Phase B depends on a task in Phase A → Phase B `depends_on: [phase-A]`
+    - Phases with `depends_on: []` can start immediately and run in parallel
+    - This enables parallel phase execution during /build
 ```
 
 ## Step 3: DevOps + Parallel Spec Generation (Background Agents)
