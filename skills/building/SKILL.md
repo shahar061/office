@@ -10,11 +10,10 @@ description: "Execute implementation plan with autonomous subagent pipeline. Two
 Autonomous execution of the implementation plan from `/warroom`. Each task runs through a 4-subagent pipeline: Implementer → Clarifier (if needed) → Spec-Reviewer → Code-Reviewer.
 
 **Key principles:**
-- Phases run **sequentially** (one at a time)
-- Tasks run **in parallel** within a phase (based on dependency DAG)
-- Each subagent is **fresh** (no inherited context)
+- Phases run **sequentially** (invokes `/phase-execution` skill for each)
+- Tasks run **in parallel** within a phase (DAG-based, spawned by skill)
+- Each task subagent is **fresh** (no inherited context)
 - **No man-in-loop** unless critical blocker (flag)
-- **No polling** - orchestrator waits idle while phase executor runs
 
 ## Prerequisites
 
@@ -42,22 +41,7 @@ If any missing:
 - Do NOT read spec files into orchestrator context
 - Only verify files EXIST - subagents will read them
 
-### 2. Load Prompt Templates
-
-**IMPORTANT:** Subagents are sandboxed and cannot access plugin cache files. You MUST read templates once and embed them in phase executor prompts.
-
-```yaml
-Read these files from the skill directory (use Read tool):
-  - prompts/implementer.md
-  - prompts/clarifier.md
-  - prompts/spec-reviewer.md
-  - prompts/code-reviewer.md
-
-Store the content for embedding in phase executor prompts.
-This is ~250 lines total - acceptable one-time cost.
-```
-
-### 3. Check for Resume
+### 2. Check for Resume
 
 ```yaml
 If docs/office/build/ directory exists:
@@ -77,7 +61,7 @@ If docs/office/build/ directory exists:
       # Start over
 ```
 
-### 4. Configure Build
+### 3. Configure Build
 
 Ask user (use AskUserQuestion tool):
 
@@ -93,36 +77,11 @@ Ask user (use AskUserQuestion tool):
 
 **Retry limit:** (default: 3)
 
-### 5. Request Permissions
+### 4. Request Permissions
 
-**CRITICAL:** Background subagents auto-deny any tool calls that require permission. You MUST request permissions upfront for the build to work.
+**CRITICAL:** Task subagents run in background and auto-deny permission prompts. Request permissions upfront.
 
-Use the `ExitPlanMode` tool with `allowedPrompts` to request session-wide permissions:
-
-```yaml
-ExitPlanMode:
-  allowedPrompts:
-    - tool: Bash
-      prompt: "run npm and npx commands"
-    - tool: Bash
-      prompt: "run git commands"
-    - tool: Bash
-      prompt: "run build and test commands"
-    - tool: Bash
-      prompt: "run package manager commands (yarn, pnpm)"
-```
-
-**Why this is needed:**
-- Phase executors run with `run_in_background: true` for parallelism
-- Background agents cannot prompt for permissions interactively
-- Without pre-approved permissions, all Bash/Write/Edit calls fail silently
-- `allowedTools` in agent config only limits available tools, doesn't grant permissions
-
-**Note:** The user will see a permission approval prompt. If denied, fall back to sequential foreground execution.
-
-**Fallback - Manual Permission Configuration:**
-
-If `ExitPlanMode` doesn't work (e.g., not in plan mode), instruct the user to add permissions to their project's `.claude/settings.local.json`:
+Instruct the user to add permissions to their project's `.claude/settings.local.json`:
 
 ```json
 {
@@ -146,20 +105,11 @@ If `ExitPlanMode` doesn't work (e.g., not in plan mode), instruct the user to ad
 }
 ```
 
-Or for broader (less secure) access:
-```json
-{
-  "permissions": {
-    "allow": [
-      "Bash(*)"
-    ]
-  }
-}
-```
+Or for broader (less secure) access: `"Bash(*)"`.
 
 After adding permissions, user must restart Claude Code for changes to take effect.
 
-### 6. Initialize Build Directory
+### 5. Initialize Build Directory
 
 Create the build output structure:
 
@@ -189,7 +139,7 @@ started_at: [ISO timestamp]
 
 **Note:** Each phase executor will create its own `docs/office/build/phase-{id}/` directory with `status.yaml` and `progress.log`. The orchestrator does NOT create per-phase directories.
 
-### 7. Start Dashboard
+### 6. Start Dashboard
 
 **REQUIRED:** Invoke `/office:dashboard` skill to start build dashboard.
 
@@ -199,36 +149,34 @@ Use the Skill tool: skill: "office:dashboard"
 
 ## Main Loop (Sequential Phases)
 
-**Key principle:** Phases run sequentially. Tasks within each phase run in parallel based on dependencies. The orchestrator goes idle after spawning a phase executor and waits for completion (no polling).
+**Key principle:** Phases run sequentially by invoking `/phase-execution` skill. Tasks within each phase run in parallel (skill spawns background subagents).
 
 ```
 For each phase in order:
 
-  1. Create worktree for the phase:
-     - Use Bash: git worktree add .worktrees/phase-{id} -b phase-{id}
+  1. Announce phase start:
+     - "Starting phase: {phase-id} - {phase-name}"
 
-  2. Create status directory:
-     - mkdir -p docs/office/build/phase-{id}/
+  2. Invoke /phase-execution skill:
+     - Use Skill tool: skill: "office:phase-execution"
+     - The skill handles DAG execution, task parallelism, status updates
+     - Skill runs in FOREGROUND (main context) - blocks until phase completes
 
-  3. Spawn phase-executor (background: true):
-     - Pass worktree path, phase ID, embedded prompt templates
-     - The phase executor OWNS docs/office/build/phase-{id}/status.yaml
+  3. On skill return, check result:
+     - PHASE_COMPLETE: Apply completion policy
+     - FLAG: Handle flag (see Flag Handling section)
 
-  4. Wait for completion:
-     - Use TaskOutput with block: true
-     - Orchestrator goes IDLE - no polling needed
+  4. Apply completion policy:
+     - checkpoint: Ask user to review, wait for approval
+     - auto-merge: Merge phase branch to main automatically
+     - pr: Create pull request for the phase branch
 
-  5. On completion, apply completion policy:
-     - If checkpoint: Ask user to review, wait for approval
-     - If auto-merge: Merge phase branch to main automatically
-     - If pr: Create pull request for the phase branch
-
-  6. Cleanup:
-     - git worktree remove .worktrees/phase-{id}
-     - Continue to next phase
+  5. Continue to next phase
 ```
 
-**Why no parallel phases:** Simplifies state management, prevents merge conflicts, and reduces context usage. Tasks within a phase provide sufficient parallelism.
+**Why sequential phases:** Skills run in main context (foreground). Only one skill can run at a time. Tasks within a phase provide parallelism via background subagents.
+
+**Why this works:** The `/phase-execution` skill runs in the main conversation context, so it CAN spawn background subagents for parallel task execution. Background subagents cannot spawn nested subagents, but they don't need to - each task subagent executes the full 4-stage pipeline inline.
 
 ## State Management
 
@@ -274,117 +222,53 @@ tasks:
 - Dashboard watches `build/` directory for all updates
 - Orchestrator stays lean (no state file reads)
 
-## Dispatching Phase Executor
+## Invoking Phase Execution
 
-**CRITICAL:**
-- Use `office:phase-executor` agent - it has `allowedTools` configured
-- Embed prompt templates directly (subagents cannot access plugin cache files)
-- Use `run_in_background: true` so you can use TaskOutput to wait
+Use the Skill tool to invoke `/phase-execution`:
 
 ```yaml
-Task tool:
-  subagent_type: office:phase-executor
-  run_in_background: true
-  description: "Execute phase: [phase-id]"
-  prompt: |
-    ## Phase Execution Context
-
-    Work in worktree: [worktree-absolute-path]
-
-    ## File Paths (READ THESE - they are in the project, not this prompt)
-    - Tasks file: [project]/docs/office/tasks.yaml
-    - Phase spec: [project]/spec/phase_[N]_[name]/spec.md
-    - Build config: [project]/docs/office/build/config.yaml
-
-    ## Your Phase
-    Phase ID: [phase-id]
-
-    ## Status Files (YOU OWN THESE)
-    - Status: [project]/docs/office/build/phase-[id]/status.yaml
-    - Log: [project]/docs/office/build/phase-[id]/progress.log
-
-    ## Configuration
-    Models: implementer=[implementer], clarifier=[clarifier],
-            spec_reviewer=[spec_reviewer], code_reviewer=[code_reviewer]
-    Retry limit: [retry_limit]
-
-    ## Prompt Templates (embedded - subagents cannot access plugin files)
-
-    ### IMPLEMENTER TEMPLATE
-    ```
-    [paste implementer.md content here]
-    ```
-
-    ### CLARIFIER TEMPLATE
-    ```
-    [paste clarifier.md content here]
-    ```
-
-    ### SPEC-REVIEWER TEMPLATE
-    ```
-    [paste spec-reviewer.md content here]
-    ```
-
-    ### CODE-REVIEWER TEMPLATE
-    ```
-    [paste code-reviewer.md content here]
-    ```
-
-    ## DAG Execution Instructions
-
-    Execute tasks in parallel based on their `dependencies` field. See your
-    agent persona for the full DAG execution algorithm.
-
-    Key steps:
-    1. Read tasks.yaml for your phase's tasks and dependencies
-    2. Initialize status.yaml with all tasks as "blocked" or "ready"
-    3. Run DAG executor: spawn ready tasks in parallel, wait for any completion
-    4. Merge completed task branches, spawn newly-ready tasks
-    5. Repeat until all tasks done or a blocking flag occurs
-
-    ## Output Format
-    After each task:
-    TASK_STATUS: [task-id] [DONE|FLAG|SKIPPED] [optional: flag_type]
-
-    On completion:
-    PHASE_COMPLETE: [phase-id]
-
-    On flag:
-    FLAG: [flag_type] | [task-id] | [brief description]
+Skill tool:
+  skill: "office:phase-execution"
 ```
 
-## Waiting for Phase Completion
+Before invoking, set context for the skill (it reads from conversation):
+- Current phase ID
+- Project path (absolute)
+- Model configuration from config.yaml
+- Retry limit
 
-After dispatching the phase executor:
+The skill will:
+1. Read tasks.yaml to get this phase's tasks and dependencies
+2. Initialize status.yaml and progress.log
+3. Spawn task subagents in parallel based on DAG
+4. Wait for tasks to complete, spawn newly-ready tasks
+5. Return PHASE_COMPLETE or FLAG
 
-```yaml
-TaskOutput:
-  task_id: [agent_id from Task result]
-  block: true
-  timeout: 600000  # 10 minutes max per phase (adjust as needed)
+**Example conversation flow:**
+
+```
+Orchestrator: "Executing phase-1: Project Foundation"
+Orchestrator: "Phase ID: phase-1"
+Orchestrator: "Project: /Users/dev/my-project"
+Orchestrator: "Models: sonnet/opus/haiku/sonnet, Retry: 3"
+[Invokes Skill: office:phase-execution]
+
+... skill runs, spawns parallel tasks ...
+
+Skill returns: "PHASE_COMPLETE: phase-1"
+Orchestrator: Applies completion policy, moves to phase-2
 ```
 
-The orchestrator goes **idle** while waiting. No polling needed.
+## Skill Completion
 
-When TaskOutput returns, check the result for:
-- `PHASE_COMPLETE` - Phase finished successfully
-- `FLAG: ...` - Human intervention needed (see Flag Handling)
+The `/phase-execution` skill runs in the **foreground** (main context). When it returns:
 
-## No Polling Required
-
-The new architecture eliminates polling entirely:
-
-1. **Orchestrator waits with TaskOutput** - goes idle, no context usage
-2. **Phase executor updates status.yaml** - dashboard watches this
-3. **Dashboard watches build/ directory** - users see real-time progress
-
-**Result patterns in TaskOutput:**
-
-| Pattern | Meaning | Action |
-|---------|---------|--------|
+| Output | Meaning | Action |
+|--------|---------|--------|
 | `PHASE_COMPLETE: [id]` | Phase finished | Apply completion policy |
 | `FLAG: [type] \| [task] \| [desc]` | Needs human input | Handle flag |
-| Task exits with error | Phase failed | Mark failed, ask user |
+
+**Dashboard integration:** The skill updates `status.yaml` and `progress.log` as tasks complete. Dashboard watches these files for real-time progress display.
 
 ## Flag Handling
 
@@ -483,36 +367,30 @@ sed -i '' 's/status: .*/status: build_complete/' docs/office/session.yaml
 
 ## Context Budget Guidelines
 
-The new architecture dramatically reduces orchestrator context:
-
 | Item | Approach | Context Cost |
 |------|----------|--------------|
-| tasks.yaml | Pass path to subagents | ~0 |
-| spec files | Pass path to subagents | ~0 |
-| prompt templates | Read ONCE, embed in phase prompts | ~250 (one-time) |
-| State updates | Phase executor owns files | ~0 |
-| Polling | **None** (wait with TaskOutput) | ~0 |
-| Task output | Only final result | ~100-500 |
-| Skill content | Loaded once at start | ~5k |
+| tasks.yaml | Read once per phase by skill | ~500-1k (per phase) |
+| spec files | Read by task subagents | ~0 (in main) |
+| State updates | Skill owns status files | ~50 per update |
+| /build skill | Loaded once | ~5k |
+| /phase-execution skill | Loaded per phase | ~3k (per phase) |
+| Task subagent results | Brief completion messages | ~100 per task |
 
-**Total orchestrator overhead: ~5-10k per phase** (vs 220k+ with polling)
+**Total per phase: ~5-8k context**
 
-**Why templates must be embedded:**
-- Subagents run in sandboxed environments
-- They cannot access `~/.claude/plugins/cache/...` paths
-- Only project directory files are accessible to subagents
+**Why this works:**
+- Each task subagent gets **fresh context** (no accumulation)
+- Skill reads tasks.yaml once, stores dependency graph in memory
+- Heavy implementation work happens in isolated subagents
 
 ## Files
 
-**Skill files:**
-- `SKILL.md` - This orchestrator
-- `prompts/implementer.md` - Implementer subagent template
-- `prompts/clarifier.md` - Clarifier subagent template
-- `prompts/spec-reviewer.md` - Spec reviewer subagent template
-- `prompts/code-reviewer.md` - Code reviewer subagent template
+**Skills:**
+- `skills/building/SKILL.md` - This orchestrator
+- `skills/phase-execution/SKILL.md` - Phase executor (DAG + task parallelism)
 
 **Runtime files:**
 - `docs/office/build/config.yaml` - Build configuration
-- `docs/office/build/phase-{id}/status.yaml` - Per-phase status (owned by phase executor)
+- `docs/office/build/phase-{id}/status.yaml` - Per-phase status (owned by phase-execution skill)
 - `docs/office/build/phase-{id}/progress.log` - Per-phase event log
 - `docs/office/session.yaml` - Updated on completion

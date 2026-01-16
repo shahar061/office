@@ -197,9 +197,11 @@ def merge_task_data(tasks_yaml, phases_state):
     merged = []
     for phase in phases:
         phase_id = phase['id']
-        # Look up status by "phase-{id}" directory name
-        phase_dir_name = f"phase-{phase_id}"
-        phase_status = phases_state.get(phase_dir_name, {})
+        # Look up status by directory name (phase_id is already like "phase-1")
+        # Also try with "phase-" prefix for backwards compatibility
+        phase_status = phases_state.get(phase_id, {})
+        if not phase_status:
+            phase_status = phases_state.get(f"phase-{phase_id}", {})
 
         # New format: tasks is a dict of task_id -> status string
         # e.g. {'setup-001': 'completed', 'setup-002': 'in_progress'}
@@ -219,11 +221,19 @@ def merge_task_data(tasks_yaml, phases_state):
             elif status == 'ready':
                 status = 'queued'  # Ready but not started yet
 
+            # Normalize agent name: underscore to hyphen for frontend compatibility
+            agent = task.get('assigned_agent', '')
+            if agent:
+                agent = agent.replace('_', '-')
+
             merged_tasks.append({
                 **task,
                 'status': status,
+                # Map assigned_agent to agent for frontend compatibility
+                'agent': agent or None,
+                # Alias description to title for frontend
+                'title': task.get('description', task.get('title', '')),
                 # These fields may not exist in new format, but keep for compatibility
-                'agent': None,
                 'started_at': None,
                 'status_changed_at': None,
                 'retry_count': 0,
