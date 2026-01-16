@@ -2,6 +2,16 @@
 
 All notable changes to the Office plugin will be documented in this file.
 
+## [0.2.45] - 2026-01-16
+
+### Changed
+
+- **Terminology: "feature" → "phase"**: Unified terminology across the pipeline
+  - Building skill now uses "phase" to match warroom output (plan.md, tasks.yaml, spec folders)
+  - `feature-executor` → `phase-executor`
+  - `max_parallel_features` → `max_parallel_phases`
+  - `build-state.yaml` schema: `features:` → `phases:`
+
 ## [0.2.44] - 2026-01-16
 
 ### Fixed
