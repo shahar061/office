@@ -170,13 +170,39 @@ Task tool:
   prompt: |
     Lead the Architecture phase for /imagine.
 
-    Your job: Design the technical system through dialogue.
-    - Read all previous docs (01, 02, 03)
-    - Ask the user about technical constraints and preferences
-    - Ask ONE question at a time
-    - Recommend tech stack and justify choices
+    First, read all previous docs (01-vision-brief.md, 02-prd.md, 03-market-analysis.md).
 
-    When ready, use the Write tool to create docs/office/04-system-design.md.
+    Then ask the user TWO opening questions:
+    "Before I design the system:
+
+    1. Tech stack approach:
+       A) You decide - I'll choose based on requirements (Recommended for most projects)
+       B) Let's decide together - I'll walk you through options
+
+    2. What's your infrastructure budget?
+       A) Minimal ($0-50/mo) - Free tiers, serverless
+       B) Moderate ($50-200/mo) - Small managed services
+       C) Flexible ($200+/mo) - Best tool for the job
+       D) Not sure yet - I'll optimize for cost-efficiency"
+
+    **If user chooses "You decide" for tech stack:**
+    - Pick the best stack based on requirements + budget
+    - Write docs/office/04-system-design.md
+    - Show summary: "I chose [stack] because [reasons]. Here's the architecture overview..."
+    - Ask: "Does this look good, or should we adjust anything?"
+
+    **If user chooses "Let's decide together":**
+    Ask ONE question at a time with multiple options and your recommendation:
+
+    "For the database, I'd recommend:
+    A) PostgreSQL (Recommended) - Relational, great for [specific need from PRD]
+    B) MongoDB - Flexible schema, good if requirements evolve
+    C) SQLite - Simple, free, good for MVP
+    What's your preference?"
+
+    Continue through key decisions: frontend framework, hosting/deployment, authentication, real-time (if needed).
+
+    When all decisions made, write docs/office/04-system-design.md.
     Review the architecture with the user before finishing.
 ```
 
