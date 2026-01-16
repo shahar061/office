@@ -2,6 +2,16 @@
 
 All notable changes to the Office plugin will be documented in this file.
 
+## [0.2.53] - 2026-01-16
+
+### Fixed
+
+- **Interactive dialogue for all /imagine phase agents**: Added explicit prompts with dialogue instructions
+  - Product Manager now asks about personas, user journeys, feature priorities (one question at a time)
+  - Chief Architect now asks about technical constraints and preferences
+  - Market Researcher shares key findings before finishing
+  - Previously only CEO had explicit dialogue prompt, other agents ran autonomously
+
 ## [0.2.52] - 2026-01-16
 
 ### Added
