@@ -10,10 +10,11 @@ description: "Execute implementation plan with autonomous subagent pipeline. Two
 Autonomous execution of the implementation plan from `/warroom`. Each task runs through a 4-subagent pipeline: Implementer → Clarifier (if needed) → Spec-Reviewer → Code-Reviewer.
 
 **Key principles:**
-- Features run in **parallel** (background tasks, isolated worktrees)
-- Tasks run **sequentially** within a phase
+- Phases run **sequentially** (one at a time)
+- Tasks run **in parallel** within a phase (based on dependency DAG)
 - Each subagent is **fresh** (no inherited context)
 - **No man-in-loop** unless critical blocker (flag)
+- **No polling** - orchestrator waits idle while phase executor runs
 
 ## Prerequisites
 
@@ -59,16 +60,21 @@ This is ~250 lines total - acceptable one-time cost.
 ### 3. Check for Resume
 
 ```yaml
-If docs/office/build-state.yaml exists:
-  # Only grep for status, don't read full file
-  status=$(grep "^  status:" docs/office/build-state.yaml | head -1 | awk '{print $2}')
+If docs/office/build/ directory exists:
+  # Check for existing phase directories
+  phases=$(ls -d docs/office/build/phase-* 2>/dev/null)
 
-  If status == "in_progress":
-    Ask: "Found in-progress build. Resume or start fresh?"
+  If phases exist:
+    Ask: "Found existing build. Resume or start fresh?"
     If resume:
-      # Extract only phase statuses, not full file
-      grep -E "^  - id:|status:" docs/office/build-state.yaml
-    If fresh: Delete build-state.yaml, start over
+      # Find last completed phase
+      for dir in $phases; do
+        grep -l "status: completed" "$dir/status.yaml" 2>/dev/null
+      done
+      # Resume from first incomplete phase
+    If fresh:
+      rm -rf docs/office/build/
+      # Start over
 ```
 
 ### 4. Configure Build
@@ -84,8 +90,6 @@ Ask user (use AskUserQuestion tool):
 - `default` - Sonnet/Opus/Haiku/Sonnet (recommended)
 - `fast` - Sonnet/Sonnet/Haiku/Haiku
 - `quality` - Opus/Opus/Sonnet/Sonnet
-
-**Max parallel phases:** (default: 3)
 
 **Retry limit:** (default: 3)
 
@@ -155,9 +159,14 @@ Or for broader (less secure) access:
 
 After adding permissions, user must restart Claude Code for changes to take effect.
 
-### 6. Initialize State
+### 6. Initialize Build Directory
 
-Create `docs/office/build-state.yaml` with initial structure.
+Create the build output structure:
+
+```
+docs/office/build/
+└── config.yaml       # Build configuration
+```
 
 **Extract phase list from tasks.yaml without reading full file:**
 ```bash
@@ -166,7 +175,19 @@ grep -E "^- id:|^  name:" docs/office/tasks.yaml | paste - - | \
   sed 's/- id: //; s/  name: /|/'
 ```
 
-Then write the build-state.yaml with phases set to `pending`.
+**Create config.yaml with build settings:**
+```yaml
+completion_policy: [checkpoint|auto-merge|pr]
+models:
+  implementer: sonnet
+  clarifier: opus
+  spec_reviewer: haiku
+  code_reviewer: sonnet
+retry_limit: 3
+started_at: [ISO timestamp]
+```
+
+**Note:** Each phase executor will create its own `docs/office/build/phase-{id}/` directory with `status.yaml` and `progress.log`. The orchestrator does NOT create per-phase directories.
 
 ### 7. Start Dashboard
 
@@ -176,205 +197,194 @@ Then write the build-state.yaml with phases set to `pending`.
 Use the Skill tool: skill: "office:dashboard"
 ```
 
-## Main Loop
+## Main Loop (Sequential Phases)
+
+**Key principle:** Phases run sequentially. Tasks within each phase run in parallel based on dependencies. The orchestrator goes idle after spawning a phase executor and waits for completion (no polling).
 
 ```
-While phases remain incomplete:
+For each phase in order:
 
-  1. Find ready phases (use grep, not full file read):
-     grep -B2 "status: pending" docs/office/build-state.yaml | grep "id:"
-     # Check depends_on separately
+  1. Create worktree for the phase:
+     - Use Bash: git worktree add .worktrees/phase-{id} -b phase-{id}
 
-  2. Dispatch ready phases in parallel:
-     - Create worktree (superpowers:using-git-worktrees)
-     - Start phase-executor as background task
-     - Dispatch state-updater agent to mark phase in_progress
+  2. Create status directory:
+     - mkdir -p docs/office/build/phase-{id}/
 
-  3. Monitor background tasks (lightweight):
-     - Use targeted grep on output files (see Monitoring section)
-     - On flag: Handle flag (see Flag Handling)
-     - On completion: Check newly unblocked phases
+  3. Spawn phase-executor (background: true):
+     - Pass worktree path, phase ID, embedded prompt templates
+     - The phase executor OWNS docs/office/build/phase-{id}/status.yaml
 
-  4. Repeat until all phases completed or aborted
+  4. Wait for completion:
+     - Use TaskOutput with block: true
+     - Orchestrator goes IDLE - no polling needed
+
+  5. On completion, apply completion policy:
+     - If checkpoint: Ask user to review, wait for approval
+     - If auto-merge: Merge phase branch to main automatically
+     - If pr: Create pull request for the phase branch
+
+  6. Cleanup:
+     - git worktree remove .worktrees/phase-{id}
+     - Continue to next phase
 ```
 
-## State Updates
+**Why no parallel phases:** Simplifies state management, prevents merge conflicts, and reduces context usage. Tasks within a phase provide sufficient parallelism.
 
-**IMPORTANT:** Use a dedicated haiku agent to update build-state.yaml instead of reading/editing in orchestrator.
+## State Management
 
-### State Updater Agent
+**Key principle:** Each phase executor OWNS its status file. No race conditions, no shared state.
 
-When you need to update build-state.yaml, dispatch a haiku agent:
+### Directory Structure
+
+```
+docs/office/build/
+├── config.yaml           # Build config (created by orchestrator)
+└── phase-{id}/           # Created by phase executor
+    ├── status.yaml       # Phase executor OWNS this file
+    └── progress.log      # Append-only event log
+```
+
+### status.yaml format (per-phase)
+
+```yaml
+phase: phase-1
+status: in_progress  # pending | in_progress | completed | failed
+started_at: "2026-01-16T10:30:00Z"
+tasks:
+  setup-001: completed
+  setup-002: in_progress
+  setup-003: in_progress  # parallel with 002 (different dependency chain)
+  setup-004: blocked      # waiting on 002, 003
+```
+
+### progress.log format (append-only)
+
+```
+2026-01-16T10:30:00 PHASE_START
+2026-01-16T10:30:01 TASK_START:setup-001
+2026-01-16T10:31:30 TASK_DONE:setup-001
+2026-01-16T10:31:31 TASK_START:setup-002
+2026-01-16T10:31:31 TASK_START:setup-003
+2026-01-16T10:32:45 CODE_REVIEW:setup-002
+2026-01-16T10:33:00 TASK_DONE:setup-002
+```
+
+**Benefits:**
+- No race conditions (each phase has its own file)
+- Dashboard watches `build/` directory for all updates
+- Orchestrator stays lean (no state file reads)
+
+## Dispatching Phase Executor
+
+**CRITICAL:**
+- Use `office:phase-executor` agent - it has `allowedTools` configured
+- Embed prompt templates directly (subagents cannot access plugin cache files)
+- Use `run_in_background: true` so you can use TaskOutput to wait
 
 ```yaml
 Task tool:
-  subagent_type: general-purpose
-  model: haiku
-  description: "Update build state: [brief description]"
+  subagent_type: office:phase-executor
+  run_in_background: true
+  description: "Execute phase: [phase-id]"
   prompt: |
-    Update the build state file at: [project]/docs/office/build-state.yaml
+    ## Phase Execution Context
 
-    Action: [one of: mark_phase_started, mark_task_started, mark_task_completed,
-             mark_phase_completed, add_flag, mark_task_skipped]
+    Work in worktree: [worktree-absolute-path]
 
-    Details:
-      phase_id: [phase-id]
-      task_id: [task-id if applicable]
-      [additional fields as needed]
+    ## File Paths (READ THESE - they are in the project, not this prompt)
+    - Tasks file: [project]/docs/office/tasks.yaml
+    - Phase spec: [project]/spec/phase_[N]_[name]/spec.md
+    - Build config: [project]/docs/office/build/config.yaml
 
-    Read the file, make the targeted edit, write it back.
-    Respond with: DONE or ERROR: [reason]
+    ## Your Phase
+    Phase ID: [phase-id]
+
+    ## Status Files (YOU OWN THESE)
+    - Status: [project]/docs/office/build/phase-[id]/status.yaml
+    - Log: [project]/docs/office/build/phase-[id]/progress.log
+
+    ## Configuration
+    Models: implementer=[implementer], clarifier=[clarifier],
+            spec_reviewer=[spec_reviewer], code_reviewer=[code_reviewer]
+    Retry limit: [retry_limit]
+
+    ## Prompt Templates (embedded - subagents cannot access plugin files)
+
+    ### IMPLEMENTER TEMPLATE
+    ```
+    [paste implementer.md content here]
+    ```
+
+    ### CLARIFIER TEMPLATE
+    ```
+    [paste clarifier.md content here]
+    ```
+
+    ### SPEC-REVIEWER TEMPLATE
+    ```
+    [paste spec-reviewer.md content here]
+    ```
+
+    ### CODE-REVIEWER TEMPLATE
+    ```
+    [paste code-reviewer.md content here]
+    ```
+
+    ## DAG Execution Instructions
+
+    Execute tasks in parallel based on their `dependencies` field. See your
+    agent persona for the full DAG execution algorithm.
+
+    Key steps:
+    1. Read tasks.yaml for your phase's tasks and dependencies
+    2. Initialize status.yaml with all tasks as "blocked" or "ready"
+    3. Run DAG executor: spawn ready tasks in parallel, wait for any completion
+    4. Merge completed task branches, spawn newly-ready tasks
+    5. Repeat until all tasks done or a blocking flag occurs
+
+    ## Output Format
+    After each task:
+    TASK_STATUS: [task-id] [DONE|FLAG|SKIPPED] [optional: flag_type]
+
+    On completion:
+    PHASE_COMPLETE: [phase-id]
+
+    On flag:
+    FLAG: [flag_type] | [task-id] | [brief description]
 ```
 
-This keeps build-state.yaml out of orchestrator context entirely.
+## Waiting for Phase Completion
 
-## Dispatching Phases
-
-**IMPORTANT:** To run phases in parallel, invoke multiple Task tools in a SINGLE message.
-
-**CRITICAL:**
-- Use `office:phase-executor` agent - it has `allowedTools` configured (tools are available, permissions granted by step 5)
-- Embed prompt templates directly (subagents cannot access plugin cache files)
+After dispatching the phase executor:
 
 ```yaml
-For each ready phase:
-  Task tool:
-    subagent_type: office:phase-executor   # Has Read/Write/Edit/Bash/Task permissions
-    run_in_background: true
-    description: "Execute phase: [phase-id]"
-    prompt: |
-      Work in worktree: [worktree-absolute-path]
-
-      ## File Paths (READ THESE - they are in the project, not this prompt)
-      - Tasks file: [project]/docs/office/tasks.yaml
-      - Phase spec: [project]/spec/phase_[N]_[name]/spec.md
-      - Build state: [project]/docs/office/build-state.yaml
-
-      ## Your Phase
-      Phase ID: [phase-id]
-
-      ## Configuration
-      Models: implementer=[implementer], clarifier=[clarifier],
-              spec_reviewer=[spec_reviewer], code_reviewer=[code_reviewer]
-      Retry limit: [retry_limit]
-
-      ## Prompt Templates (embedded - subagents cannot access plugin files)
-
-      ### IMPLEMENTER TEMPLATE
-      ```
-      [paste implementer.md content here]
-      ```
-
-      ### CLARIFIER TEMPLATE
-      ```
-      [paste clarifier.md content here]
-      ```
-
-      ### SPEC-REVIEWER TEMPLATE
-      ```
-      [paste spec-reviewer.md content here]
-      ```
-
-      ### CODE-REVIEWER TEMPLATE
-      ```
-      [paste code-reviewer.md content here]
-      ```
-
-      ## Instructions
-      1. Read tasks.yaml to get tasks for phase [phase-id]
-      2. Read the phase spec file for implementation details
-      3. For EACH task, follow the pipeline defined in your agent persona:
-
-      ### Pipeline per Task
-
-      1. IMPLEMENTER
-         Use the IMPLEMENTER TEMPLATE above
-         Model: [config.models.implementer]
-
-         Dispatch subagent with:
-         - The template content
-         - Task details from tasks.yaml
-         - Spec section for this task
-
-         Wait for response:
-         - DONE → proceed to step 3
-         - NEED_CLARIFICATION → proceed to step 2
-         - ERROR → retry up to [retry_limit], then FLAG
-
-      2. CLARIFIER (only if NEED_CLARIFICATION)
-         Use the CLARIFIER TEMPLATE above
-         Model: [config.models.clarifier]
-
-         Dispatch subagent, wait for response:
-         - ANSWERED → re-dispatch implementer with answer
-         - FLAG → exit with flag (clarifier_blocked)
-
-      3. SPEC-REVIEWER
-         Use the SPEC-REVIEWER TEMPLATE above
-         Model: [config.models.spec_reviewer]
-
-         Dispatch subagent, wait for response:
-         - COMPLIANT → proceed to step 4
-         - ISSUES → re-dispatch implementer to fix
-           - Max 3 loops
-           - If exhausted → FLAG (spec_review_exhausted)
-
-      4. CODE-REVIEWER
-         Use the CODE-REVIEWER TEMPLATE above
-         Model: [config.models.code_reviewer]
-
-         Dispatch subagent, wait for response:
-         - APPROVED → task complete, next task
-         - ISSUES → re-dispatch implementer to fix
-           - Max 3 loops
-           - If exhausted → FLAG (code_review_exhausted, WARNING)
-
-      ## After Each Task
-      Update build-state.yaml directly (you have full context of current task).
-
-      ## Output Format
-      After each task, output a status line:
-      TASK_STATUS: [task-id] [DONE|FLAG|SKIPPED] [optional: flag_type]
-
-      On completion:
-      PHASE_COMPLETE: [phase-id]
-
-      On flag:
-      FLAG: [flag_type] | [task-id] | [brief description]
+TaskOutput:
+  task_id: [agent_id from Task result]
+  block: true
+  timeout: 600000  # 10 minutes max per phase (adjust as needed)
 ```
 
-## Monitoring Background Tasks
+The orchestrator goes **idle** while waiting. No polling needed.
 
-**CRITICAL:** Do NOT dump full output into orchestrator context.
+When TaskOutput returns, check the result for:
+- `PHASE_COMPLETE` - Phase finished successfully
+- `FLAG: ...` - Human intervention needed (see Flag Handling)
 
-### Lightweight Polling
+## No Polling Required
 
-```bash
-# Check for completion or flags - returns just status lines
-grep -E "^(TASK_STATUS|PHASE_COMPLETE|FLAG):" [output-file] | tail -20
+The new architecture eliminates polling entirely:
 
-# Check if still running
-ps -p [pid] >/dev/null 2>&1 && echo "RUNNING" || echo "FINISHED"
-```
+1. **Orchestrator waits with TaskOutput** - goes idle, no context usage
+2. **Phase executor updates status.yaml** - dashboard watches this
+3. **Dashboard watches build/ directory** - users see real-time progress
 
-### What to Look For
+**Result patterns in TaskOutput:**
 
-| Pattern | Meaning |
-|---------|---------|
-| `PHASE_COMPLETE: [id]` | Phase finished successfully |
-| `FLAG: [type] \| [task] \| [desc]` | Human intervention needed |
-| `TASK_STATUS: [id] DONE` | Task completed |
-| `TASK_STATUS: [id] FLAG [type]` | Task flagged |
-
-### Polling Frequency
-
-```yaml
-Every 30 seconds:
-  1. Check each background task output with grep
-  2. If FLAG found: Handle immediately
-  3. If PHASE_COMPLETE found: Process completion
-  4. If still RUNNING: Continue polling
-```
+| Pattern | Meaning | Action |
+|---------|---------|--------|
+| `PHASE_COMPLETE: [id]` | Phase finished | Apply completion policy |
+| `FLAG: [type] \| [task] \| [desc]` | Needs human input | Handle flag |
+| Task exits with error | Phase failed | Mark failed, ask user |
 
 ## Flag Handling
 
@@ -393,9 +403,7 @@ Flags are the **only** time human intervention is needed.
 ### On Flag Received
 
 ```yaml
-1. Dispatch state-updater (haiku) to update build-state.yaml:
-   - Task status: flagged
-   - Add to flags array
+1. Read flag details from TaskOutput result
 
 2. Present to user:
    FLAG: [type]
@@ -475,19 +483,19 @@ sed -i '' 's/status: .*/status: build_complete/' docs/office/session.yaml
 
 ## Context Budget Guidelines
 
-To stay under ~50k context in orchestrator:
+The new architecture dramatically reduces orchestrator context:
 
 | Item | Approach | Context Cost |
 |------|----------|--------------|
 | tasks.yaml | Pass path to subagents | ~0 |
 | spec files | Pass path to subagents | ~0 |
 | prompt templates | Read ONCE, embed in phase prompts | ~250 (one-time) |
-| build-state.yaml | Use haiku state-updater | ~0 |
-| Task output | grep for status lines only | ~100-500 |
+| State updates | Phase executor owns files | ~0 |
+| Polling | **None** (wait with TaskOutput) | ~0 |
+| Task output | Only final result | ~100-500 |
 | Skill content | Loaded once at start | ~5k |
-| Conversation | Accumulates | Variable |
 
-**Total orchestrator overhead: ~5-10k** (vs 85k+ before)
+**Total orchestrator overhead: ~5-10k per phase** (vs 220k+ with polling)
 
 **Why templates must be embedded:**
 - Subagents run in sandboxed environments
@@ -504,5 +512,7 @@ To stay under ~50k context in orchestrator:
 - `prompts/code-reviewer.md` - Code reviewer subagent template
 
 **Runtime files:**
-- `docs/office/build-state.yaml` - Build progress state
+- `docs/office/build/config.yaml` - Build configuration
+- `docs/office/build/phase-{id}/status.yaml` - Per-phase status (owned by phase executor)
+- `docs/office/build/phase-{id}/progress.log` - Per-phase event log
 - `docs/office/session.yaml` - Updated on completion

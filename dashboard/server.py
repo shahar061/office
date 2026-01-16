@@ -21,7 +21,9 @@ sock = Sock(app)
 # Configuration
 DEFAULT_PORT = 5050
 MAX_PORT_TRIES = 10
-WATCH_FILES = ['build-state.yaml', 'tasks.yaml']
+# Watch tasks.yaml for structure and build/ directory for per-phase status
+WATCH_FILES = ['tasks.yaml']
+WATCH_DIRS = ['build']  # Recursive watch for build/phase-*/status.yaml
 
 # Global state
 office_dir = None
@@ -31,17 +33,35 @@ connected_clients = set()
 class FileChangeHandler(FileSystemEventHandler):
     """Handle file changes and notify connected clients."""
 
-    def __init__(self, callback):
+    def __init__(self, callback, office_path):
         self.callback = callback
+        self.office_path = office_path
         self._last_modified = {}
         self._debounce_seconds = 0.5
+
+    def _should_watch(self, path):
+        """Check if this path should trigger an update."""
+        filename = os.path.basename(path)
+
+        # Watch specific files in office dir
+        if filename in WATCH_FILES:
+            return True
+
+        # Watch files in build/ subdirectories (status.yaml, progress.log)
+        rel_path = os.path.relpath(path, self.office_path)
+        for watch_dir in WATCH_DIRS:
+            if rel_path.startswith(watch_dir + os.sep):
+                # Only watch yaml and log files in build/
+                if filename.endswith('.yaml') or filename.endswith('.log'):
+                    return True
+
+        return False
 
     def on_modified(self, event):
         if event.is_directory:
             return
 
-        filename = os.path.basename(event.src_path)
-        if filename not in WATCH_FILES:
+        if not self._should_watch(event.src_path):
             return
 
         # Debounce rapid changes
@@ -51,7 +71,20 @@ class FileChangeHandler(FileSystemEventHandler):
             return
         self._last_modified[event.src_path] = now
 
+        filename = os.path.basename(event.src_path)
         print(f"File changed: {filename}")
+        self.callback()
+
+    def on_created(self, event):
+        """Also handle newly created files in build/ directory."""
+        if event.is_directory:
+            return
+
+        if not self._should_watch(event.src_path):
+            return
+
+        filename = os.path.basename(event.src_path)
+        print(f"File created: {filename}")
         self.callback()
 
 
@@ -65,11 +98,12 @@ def start_file_watcher(callback):
     if not office_dir:
         return
 
-    handler = FileChangeHandler(callback)
+    handler = FileChangeHandler(callback, str(office_dir))
     observer = Observer()
-    observer.schedule(handler, str(office_dir), recursive=False)
+    # Watch recursively to catch build/phase-*/status.yaml changes
+    observer.schedule(handler, str(office_dir), recursive=True)
     observer.start()
-    print(f"Watching for changes in {office_dir}")
+    print(f"Watching for changes in {office_dir} (recursive)")
 
 
 def stop_file_watcher():
@@ -95,20 +129,21 @@ def find_office_dir():
 
 
 def load_state():
-    """Load and merge tasks.yaml and build-state.yaml."""
+    """Load tasks.yaml and aggregate per-phase status files from build/."""
     if not office_dir:
         return {'error': 'No docs/office directory found'}
 
     tasks_file = office_dir / 'tasks.yaml'
-    state_file = office_dir / 'build-state.yaml'
+    build_dir = office_dir / 'build'
 
     data = {
         'tasks': None,
-        'build_state': None,
+        'phases_state': {},
+        'build_config': None,
         'merged': []
     }
 
-    # Load tasks.yaml
+    # Load tasks.yaml for structure
     if tasks_file.exists():
         try:
             with open(tasks_file) as f:
@@ -116,55 +151,85 @@ def load_state():
         except Exception as e:
             data['tasks_error'] = str(e)
 
-    # Load build-state.yaml
-    if state_file.exists():
+    # Load build config if exists
+    config_file = build_dir / 'config.yaml'
+    if config_file.exists():
         try:
-            with open(state_file) as f:
-                data['build_state'] = yaml.safe_load(f)
+            with open(config_file) as f:
+                data['build_config'] = yaml.safe_load(f)
         except Exception as e:
-            data['build_state_error'] = str(e)
+            data['config_error'] = str(e)
+
+    # Aggregate all per-phase status files
+    if build_dir.exists():
+        for phase_dir in build_dir.glob('phase-*'):
+            status_file = phase_dir / 'status.yaml'
+            if status_file.exists():
+                try:
+                    with open(status_file) as f:
+                        phase_status = yaml.safe_load(f)
+                        # Extract phase ID from directory name (phase-1 -> phase-1)
+                        phase_id = phase_dir.name
+                        data['phases_state'][phase_id] = phase_status
+                except Exception as e:
+                    print(f"Error loading {status_file}: {e}")
 
     # Merge data for frontend
-    data['merged'] = merge_task_data(data['tasks'], data['build_state'])
+    data['merged'] = merge_task_data(data['tasks'], data['phases_state'])
 
     return data
 
 
-def merge_task_data(tasks_yaml, build_state):
-    """Merge static task definitions with live build state."""
-    if not tasks_yaml or not build_state:
+def merge_task_data(tasks_yaml, phases_state):
+    """Merge static task definitions with live per-phase status files.
+
+    Args:
+        tasks_yaml: The tasks.yaml content with phase/task structure
+        phases_state: Dict of phase_dir_name -> status.yaml content
+                      e.g. {'phase-1': {'phase': 'phase-1', 'status': 'in_progress', 'tasks': {...}}}
+    """
+    if not tasks_yaml:
         return []
 
     # Support both 'phases' and 'features' keys for flexibility
     phases = tasks_yaml.get('phases', tasks_yaml.get('features', []))
-    state_phases = {p['id']: p for p in build_state.get('phases', build_state.get('features', []))}
 
     merged = []
     for phase in phases:
         phase_id = phase['id']
-        phase_state = state_phases.get(phase_id, {})
+        # Look up status by "phase-{id}" directory name
+        phase_dir_name = f"phase-{phase_id}"
+        phase_status = phases_state.get(phase_dir_name, {})
 
-        state_tasks = {t['id']: t for t in phase_state.get('tasks', [])}
+        # New format: tasks is a dict of task_id -> status string
+        # e.g. {'setup-001': 'completed', 'setup-002': 'in_progress'}
+        task_statuses = phase_status.get('tasks', {})
 
         merged_tasks = []
         for task in phase.get('tasks', []):
             task_id = task['id']
-            task_state = state_tasks.get(task_id, {})
-            # Map status: treat 'pending' as 'queued' for frontend
-            status = task_state.get('status', 'queued')
-            if status == 'pending':
+
+            # Get status from per-phase status.yaml
+            # New format uses simple string status per task
+            status = task_statuses.get(task_id, 'blocked')
+
+            # Map status values for frontend compatibility
+            if status == 'pending' or status == 'blocked':
                 status = 'queued'
+            elif status == 'ready':
+                status = 'queued'  # Ready but not started yet
+
             merged_tasks.append({
                 **task,
                 'status': status,
-                'agent': task_state.get('agent'),
-                'started_at': task_state.get('started_at'),
-                'status_changed_at': task_state.get('status_changed_at'),
-                # Map 'attempts' to 'retry_count' for frontend compatibility
-                'retry_count': task_state.get('retry_count', task_state.get('attempts', 0)),
-                'error': task_state.get('error'),
-                'current_step': task_state.get('current_step'),
-                'review_status': task_state.get('review_status'),
+                # These fields may not exist in new format, but keep for compatibility
+                'agent': None,
+                'started_at': None,
+                'status_changed_at': None,
+                'retry_count': 0,
+                'error': None,
+                'current_step': None,
+                'review_status': None,
             })
 
         merged.append({
@@ -172,9 +237,9 @@ def merge_task_data(tasks_yaml, build_state):
             'name': phase.get('name', phase_id),
             'branch': phase.get('branch'),
             'depends_on': phase.get('depends_on', []),
-            'status': phase_state.get('status', 'pending'),
-            'started_at': phase_state.get('started_at'),
-            'completed_at': phase_state.get('completed_at'),
+            'status': phase_status.get('status', 'pending'),
+            'started_at': phase_status.get('started_at'),
+            'completed_at': None,  # Could be computed from progress.log if needed
             'tasks': merged_tasks,
         })
 
