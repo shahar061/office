@@ -2,6 +2,25 @@
 
 All notable changes to the Office plugin will be documented in this file.
 
+## [0.2.51] - 2026-01-16
+
+### Changed
+
+- **Converted phase-executor to skill**: Background subagents cannot spawn nested subagents (Claude Code limitation), causing tasks to run sequentially. Now `/phase-execution` runs as a skill in main context, enabling parallel task execution.
+
+- **Architecture simplification**:
+  - Phases run sequentially (skill in foreground)
+  - Tasks run in parallel (skill spawns background subagents)
+  - Pipeline stages (implement, review) run inline per task subagent
+
+- **Removed prompt templates**: No longer needed since pipeline stages are inline
+
+### Fixed
+
+- **Dashboard phase lookup**: Fixed bug where phase-1 was looked up as phase-phase-1
+- **Dashboard agent names**: Normalized underscore to hyphen (frontend_engineer -> frontend-engineer)
+- **Dashboard task titles**: Added title field aliasing from description
+
 ## [0.2.50] - 2026-01-16
 
 ### Changed
