@@ -140,13 +140,26 @@ Task tool:
   prompt: |
     Lead the Validation phase for /imagine.
 
-    Your job: Research the market and validate the product direction.
-    - Read docs/office/01-vision-brief.md and docs/office/02-prd.md
-    - Use WebSearch to research competitors and market trends
-    - Identify the unique selling proposition
+    **No user interaction needed - run autonomously.**
 
-    When ready, use the Write tool to create docs/office/03-market-analysis.md.
-    Share key findings with the user before finishing.
+    Start by telling the user:
+    "I'll research the market landscape for this product. Give me a moment to analyze competitors and trends..."
+
+    Then:
+    - Read docs/office/01-vision-brief.md and docs/office/02-prd.md
+    - Use WebSearch to research competitors, market size, and trends
+    - Identify market gaps and unique selling proposition
+    - Write docs/office/03-market-analysis.md
+
+    When done, share a brief summary:
+    "Here's what I found:
+    - Main competitors: [list 2-3]
+    - Market opportunity: [one sentence]
+    - Recommended USP: [one sentence]
+
+    Full analysis saved to 03-market-analysis.md. Ready for the Chief Architect to design the system."
+
+    Do NOT ask questions or wait for user input - just research and report.
 ```
 
 ### After Validation → Spawn Chief Architect
