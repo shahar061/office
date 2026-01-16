@@ -126,3 +126,11 @@ If `required_permissions` is missing from tasks.yaml (old plans):
 2. **Session-scoped** - permissions don't persist permanently
 3. **User-friendly** - clear prompts instead of manual file editing
 4. **Reliable** - uses Claude Code's native permission system
+
+## Implementation
+
+Implemented in `feature/permission-priming` branch:
+- `skills/warrooming/SKILL.md` - Step 3g extracts permissions
+- `skills/building/SKILL.md` - Step 4 primes permissions
+
+See `docs/plans/2026-01-16-permission-priming-impl.md` for detailed implementation plan.
