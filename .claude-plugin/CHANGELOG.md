@@ -2,6 +2,16 @@
 
 All notable changes to the Office plugin will be documented in this file.
 
+## [0.2.49] - 2026-01-16
+
+### Fixed
+
+- **Build skill permission handling**: Added step 5 "Request Permissions" to startup sequence
+  - Background subagents auto-deny tool calls requiring permission
+  - Uses `ExitPlanMode` with `allowedPrompts` for session-wide permissions
+  - Includes fallback with manual `.claude/settings.local.json` configuration
+  - Fixed misleading comment that claimed `allowedTools` provides autonomous operation
+
 ## [0.2.45] - 2026-01-16
 
 ### Changed
