@@ -135,18 +135,19 @@ def merge_task_data(tasks_yaml, build_state):
     if not tasks_yaml or not build_state:
         return []
 
-    features = tasks_yaml.get('features', [])
-    state_features = {f['id']: f for f in build_state.get('features', [])}
+    # Support both 'phases' and 'features' keys for flexibility
+    phases = tasks_yaml.get('phases', tasks_yaml.get('features', []))
+    state_phases = {p['id']: p for p in build_state.get('phases', build_state.get('features', []))}
 
     merged = []
-    for feature in features:
-        feature_id = feature['id']
-        feature_state = state_features.get(feature_id, {})
+    for phase in phases:
+        phase_id = phase['id']
+        phase_state = state_phases.get(phase_id, {})
 
-        state_tasks = {t['id']: t for t in feature_state.get('tasks', [])}
+        state_tasks = {t['id']: t for t in phase_state.get('tasks', [])}
 
         merged_tasks = []
-        for task in feature.get('tasks', []):
+        for task in phase.get('tasks', []):
             task_id = task['id']
             task_state = state_tasks.get(task_id, {})
             # Map status: treat 'pending' as 'queued' for frontend
@@ -167,13 +168,13 @@ def merge_task_data(tasks_yaml, build_state):
             })
 
         merged.append({
-            'id': feature_id,
-            'name': feature.get('name', feature_id),
-            'branch': feature.get('branch'),
-            'depends_on': feature.get('depends_on', []),
-            'status': feature_state.get('status', 'pending'),
-            'started_at': feature_state.get('started_at'),
-            'completed_at': feature_state.get('completed_at'),
+            'id': phase_id,
+            'name': phase.get('name', phase_id),
+            'branch': phase.get('branch'),
+            'depends_on': phase.get('depends_on', []),
+            'status': phase_state.get('status', 'pending'),
+            'started_at': phase_state.get('started_at'),
+            'completed_at': phase_state.get('completed_at'),
             'tasks': merged_tasks,
         })
 

@@ -27,22 +27,33 @@ Requires completed `/warroom` session with:
 ### 1. Validate Session
 
 ```yaml
-Check:
-  - session.yaml exists with status: plan_complete
-  - tasks.yaml exists
-  - spec/phase_*/spec.md exists (at least one)
+Check (use Bash with test/ls, do NOT read file contents):
+  - session.yaml exists: grep -q "status: plan_complete" docs/office/session.yaml
+  - tasks.yaml exists: test -f docs/office/tasks.yaml
+  - spec/phase_*/spec.md exists: ls spec/phase_*/spec.md >/dev/null 2>&1
 
 If any missing:
   "Run /warroom first to create implementation plan."
 ```
 
+**CRITICAL - Context Conservation:**
+- Do NOT read tasks.yaml into orchestrator context
+- Do NOT read spec files into orchestrator context
+- Do NOT read prompt templates into orchestrator context
+- Only verify files EXIST - subagents will read them
+
 ### 2. Check for Resume
 
 ```yaml
 If docs/office/build-state.yaml exists:
-  If status: in_progress
+  # Only grep for status, don't read full file
+  status=$(grep "^  status:" docs/office/build-state.yaml | head -1 | awk '{print $2}')
+
+  If status == "in_progress":
     Ask: "Found in-progress build. Resume or start fresh?"
-    If resume: Load state, skip completed tasks
+    If resume:
+      # Extract only phase statuses, not full file
+      grep -E "^  - id:|status:" docs/office/build-state.yaml
     If fresh: Delete build-state.yaml, start over
 ```
 
@@ -66,26 +77,16 @@ Ask user (use AskUserQuestion tool):
 
 ### 4. Initialize State
 
-Create `docs/office/build-state.yaml`:
+Create `docs/office/build-state.yaml` with initial structure.
 
-```yaml
-build:
-  started_at: "[timestamp]"
-  status: in_progress
-
-  config:
-    completion_policy: [selected]
-    retry_limit: [selected]
-    max_parallel_phases: [selected]
-    models:
-      implementer: [from preset]
-      clarifier: [from preset]
-      spec_reviewer: [from preset]
-      code_reviewer: [from preset]
-
-phases: []
-flags: []
+**Extract phase list from tasks.yaml without reading full file:**
+```bash
+# Get phase IDs and names only
+grep -E "^- id:|^  name:" docs/office/tasks.yaml | paste - - | \
+  sed 's/- id: //; s/  name: /|/'
 ```
+
+Then write the build-state.yaml with phases set to `pending`.
 
 ### 5. Start Dashboard
 
@@ -100,26 +101,58 @@ Use the Skill tool: skill: "office:dashboard"
 ```
 While phases remain incomplete:
 
-  1. Find ready phases:
-     - Status is 'pending'
-     - All depends_on phases are 'completed'
+  1. Find ready phases (use grep, not full file read):
+     grep -B2 "status: pending" docs/office/build-state.yaml | grep "id:"
+     # Check depends_on separately
 
   2. Dispatch ready phases in parallel:
      - Create worktree (superpowers:using-git-worktrees)
      - Start phase-executor as background task
-     - Update build-state.yaml: phase status = in_progress
+     - Dispatch state-updater agent to mark phase in_progress
 
-  3. Monitor background tasks:
-     - Poll for completion or flags
+  3. Monitor background tasks (lightweight):
+     - Use targeted grep on output files (see Monitoring section)
      - On flag: Handle flag (see Flag Handling)
      - On completion: Check newly unblocked phases
 
   4. Repeat until all phases completed or aborted
 ```
 
-### Dispatching Phases
+## State Updates
+
+**IMPORTANT:** Use a dedicated haiku agent to update build-state.yaml instead of reading/editing in orchestrator.
+
+### State Updater Agent
+
+When you need to update build-state.yaml, dispatch a haiku agent:
+
+```yaml
+Task tool:
+  subagent_type: general-purpose
+  model: haiku
+  description: "Update build state: [brief description]"
+  prompt: |
+    Update the build state file at: [project]/docs/office/build-state.yaml
+
+    Action: [one of: mark_phase_started, mark_task_started, mark_task_completed,
+             mark_phase_completed, add_flag, mark_task_skipped]
+
+    Details:
+      phase_id: [phase-id]
+      task_id: [task-id if applicable]
+      [additional fields as needed]
+
+    Read the file, make the targeted edit, write it back.
+    Respond with: DONE or ERROR: [reason]
+```
+
+This keeps build-state.yaml out of orchestrator context entirely.
+
+## Dispatching Phases
 
 **IMPORTANT:** To run phases in parallel, invoke multiple Task tools in a SINGLE message.
+
+**CRITICAL - Pass file PATHS, not contents:**
 
 ```yaml
 For each ready phase:
@@ -129,24 +162,40 @@ For each ready phase:
     model: sonnet
     description: "Execute phase: [phase-id]"
     prompt: |
-      Execute phase [phase-id] in worktree [worktree-path].
+      You are a phase executor. Work in worktree: [worktree-absolute-path]
 
-      Tasks to complete (in order):
-      [list of task-ids from tasks.yaml]
+      ## File Paths (READ THESE - they are NOT in this prompt)
+      - Tasks file: [project]/docs/office/tasks.yaml
+      - Phase spec: [project]/spec/phase_[N]_[name]/spec.md
+      - Build state: [project]/docs/office/build-state.yaml
+      - Prompt templates directory: [skill-base-path]/prompts/
 
-      For EACH task, follow this pipeline:
+      ## Your Phase
+      Phase ID: [phase-id]
+
+      ## Instructions
+      1. Read tasks.yaml to get tasks for phase [phase-id]
+      2. Read the phase spec file for implementation details
+      3. For EACH task, follow this pipeline:
+
+      ### Pipeline per Task
 
       1. IMPLEMENTER
-         Use prompt template: ./prompts/implementer.md
+         Read prompt template: [skill-base-path]/prompts/implementer.md
          Model: [config.models.implementer]
 
-         Dispatch subagent, wait for response:
+         Dispatch subagent with:
+         - The template content
+         - Task details from tasks.yaml
+         - Spec section for this task
+
+         Wait for response:
          - DONE → proceed to step 3
          - NEED_CLARIFICATION → proceed to step 2
          - ERROR → retry up to [retry_limit], then FLAG
 
       2. CLARIFIER (only if NEED_CLARIFICATION)
-         Use prompt template: ./prompts/clarifier.md
+         Read prompt template: [skill-base-path]/prompts/clarifier.md
          Model: [config.models.clarifier]
 
          Dispatch subagent, wait for response:
@@ -154,7 +203,7 @@ For each ready phase:
          - FLAG → exit with flag (clarifier_blocked)
 
       3. SPEC-REVIEWER
-         Use prompt template: ./prompts/spec-reviewer.md
+         Read prompt template: [skill-base-path]/prompts/spec-reviewer.md
          Model: [config.models.spec_reviewer]
 
          Dispatch subagent, wait for response:
@@ -164,7 +213,7 @@ For each ready phase:
            - If exhausted → FLAG (spec_review_exhausted)
 
       4. CODE-REVIEWER
-         Use prompt template: ./prompts/code-reviewer.md
+         Read prompt template: [skill-base-path]/prompts/code-reviewer.md
          Model: [config.models.code_reviewer]
 
          Dispatch subagent, wait for response:
@@ -173,10 +222,51 @@ For each ready phase:
            - Max 3 loops
            - If exhausted → FLAG (code_review_exhausted, WARNING)
 
-      After each task: Update build-state.yaml
+      ## After Each Task
+      Update build-state.yaml directly (you have full context of current task).
 
-      On FLAG: Exit with flag details
-      On all tasks complete: Exit with success
+      ## Output Format
+      After each task, output a status line:
+      TASK_STATUS: [task-id] [DONE|FLAG|SKIPPED] [optional: flag_type]
+
+      On completion:
+      PHASE_COMPLETE: [phase-id]
+
+      On flag:
+      FLAG: [flag_type] | [task-id] | [brief description]
+```
+
+## Monitoring Background Tasks
+
+**CRITICAL:** Do NOT dump full output into orchestrator context.
+
+### Lightweight Polling
+
+```bash
+# Check for completion or flags - returns just status lines
+grep -E "^(TASK_STATUS|PHASE_COMPLETE|FLAG):" [output-file] | tail -20
+
+# Check if still running
+ps -p [pid] >/dev/null 2>&1 && echo "RUNNING" || echo "FINISHED"
+```
+
+### What to Look For
+
+| Pattern | Meaning |
+|---------|---------|
+| `PHASE_COMPLETE: [id]` | Phase finished successfully |
+| `FLAG: [type] \| [task] \| [desc]` | Human intervention needed |
+| `TASK_STATUS: [id] DONE` | Task completed |
+| `TASK_STATUS: [id] FLAG [type]` | Task flagged |
+
+### Polling Frequency
+
+```yaml
+Every 30 seconds:
+  1. Check each background task output with grep
+  2. If FLAG found: Handle immediately
+  3. If PHASE_COMPLETE found: Process completion
+  4. If still RUNNING: Continue polling
 ```
 
 ## Flag Handling
@@ -196,12 +286,12 @@ Flags are the **only** time human intervention is needed.
 ### On Flag Received
 
 ```yaml
-1. Update build-state.yaml:
+1. Dispatch state-updater (haiku) to update build-state.yaml:
    - Task status: flagged
    - Add to flags array
 
 2. Present to user:
-   🚩 FLAG: [type]
+   FLAG: [type]
 
    Task: [task-id] - [task-title]
    Phase: [phase-id]
@@ -272,9 +362,25 @@ Check: Any blocked phases now unblocked?
 # Stop dashboard
 pkill -f "server.py.*office" 2>/dev/null
 
-# Update session.yaml
-status: build_complete
+# Update session.yaml (use state-updater or direct grep+sed)
+sed -i '' 's/status: .*/status: build_complete/' docs/office/session.yaml
 ```
+
+## Context Budget Guidelines
+
+To stay under ~50k context in orchestrator:
+
+| Item | Approach | Context Cost |
+|------|----------|--------------|
+| tasks.yaml | Pass path to subagents | ~0 |
+| spec files | Pass path to subagents | ~0 |
+| prompt templates | Pass path to subagents | ~0 |
+| build-state.yaml | Use haiku state-updater | ~0 |
+| Task output | grep for status lines only | ~100-500 |
+| Skill content | Loaded once at start | ~5k |
+| Conversation | Accumulates | Variable |
+
+**Total orchestrator overhead: ~5-10k** (vs 85k+ before)
 
 ## Files
 
