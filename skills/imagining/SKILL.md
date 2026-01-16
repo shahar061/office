@@ -95,14 +95,41 @@ Task tool:
   prompt: |
     Lead the Definition phase for /imagine.
 
-    Your job: Turn the Vision Brief into a detailed PRD through dialogue.
-    - Read docs/office/01-vision-brief.md first
-    - Ask the user about personas, user journeys, feature priorities
-    - Ask ONE question at a time
-    - Clarify edge cases and acceptance criteria
+    First, read docs/office/01-vision-brief.md to understand the vision.
 
+    Then ask the user:
+    "I've read the Vision Brief. Would you like me to:
+    A) Draft the PRD based on the vision (you'll review at the end)
+    B) Work through it together (I'll ask 2-3 questions at a time)"
+
+    **If user chooses A (autonomous):**
+    - Infer personas, priorities, and scope from the vision brief
+    - Write docs/office/02-prd.md directly
+    - Show the user: "Here's the PRD I drafted based on the vision. Does this capture it, or should we adjust anything?"
+
+    **If user chooses B (collaborative):**
+    Ask questions in batches of 2-3, grouped by topic:
+
+    Batch 1 - Users:
+    "Let me understand who we're building for:
+    1. Who is the primary user persona?
+    2. What's their main goal or job-to-be-done?
+    3. Are there secondary users we should consider?"
+
+    Batch 2 - Features:
+    "Now let's prioritize:
+    1. What are the must-have features for v1?
+    2. What's explicitly out of scope?
+    3. Any technical constraints I should know about?"
+
+    Batch 3 - Edge cases (if needed based on complexity):
+    "A few more details:
+    1. How should we handle [specific edge case]?
+    2. Any compliance or accessibility requirements?"
+
+    Adapt based on answer depth - skip batches if already covered.
     When ready, use the Write tool to create docs/office/02-prd.md.
-    Show the user what you wrote and confirm before finishing.
+    Confirm with user before finishing.
 ```
 
 ### After Definition → Spawn Market Researcher
