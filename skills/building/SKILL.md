@@ -104,7 +104,16 @@ Store `session_id` for later use (worktree names, PR).
 sed -n '/^required_permissions:/,/^[a-z]/{ /^  - /p }' docs/office/tasks.yaml | sed 's/^  - //' | head -20
 ```
 
-**5b. Fallback if no permissions listed:**
+**5b. Always-needed permissions:**
+
+These are always required for build (logging, commits):
+
+```bash
+echo "echo"
+echo "git"
+```
+
+**5c. Project-specific permissions (fallback):**
 
 If `required_permissions` section is missing (older tasks.yaml), infer from project:
 
@@ -118,7 +127,7 @@ If `required_permissions` section is missing (older tasks.yaml), infer from proj
 [ -f pyproject.toml ] && echo "pip" && echo "python"
 ```
 
-**5c. Display to user:**
+**5d. Display to user:**
 
 ```
 Preparing build permissions...
@@ -130,12 +139,13 @@ Required commands for this build:
 Requesting permissions now. Please approve each prompt.
 ```
 
-**5d. Run permission check commands:**
+**5e. Run permission check commands:**
 
 For each permission, run the corresponding check command:
 
 | Permission | Check Command |
 |------------|---------------|
+| echo | `echo "permission check"` |
 | npm | `npm --version` |
 | npx | `npx --version` |
 | yarn | `yarn --version` |
@@ -154,7 +164,7 @@ For each permission, run the corresponding check command:
 
 Run each check command. User will see permission prompts and approve them.
 
-**5e. Confirm and proceed:**
+**5f. Confirm and proceed:**
 
 After all check commands complete:
 
@@ -162,7 +172,7 @@ After all check commands complete:
 All permissions granted. Starting build...
 ```
 
-**5f. Error handling:**
+**5g. Error handling:**
 
 If a check command fails (command not found), warn but continue:
 
