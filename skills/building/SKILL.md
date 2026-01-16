@@ -39,10 +39,24 @@ If any missing:
 **CRITICAL - Context Conservation:**
 - Do NOT read tasks.yaml into orchestrator context
 - Do NOT read spec files into orchestrator context
-- Do NOT read prompt templates into orchestrator context
 - Only verify files EXIST - subagents will read them
 
-### 2. Check for Resume
+### 2. Load Prompt Templates
+
+**IMPORTANT:** Subagents are sandboxed and cannot access plugin cache files. You MUST read templates once and embed them in phase executor prompts.
+
+```yaml
+Read these files from the skill directory (use Read tool):
+  - prompts/implementer.md
+  - prompts/clarifier.md
+  - prompts/spec-reviewer.md
+  - prompts/code-reviewer.md
+
+Store the content for embedding in phase executor prompts.
+This is ~250 lines total - acceptable one-time cost.
+```
+
+### 3. Check for Resume
 
 ```yaml
 If docs/office/build-state.yaml exists:
@@ -57,7 +71,7 @@ If docs/office/build-state.yaml exists:
     If fresh: Delete build-state.yaml, start over
 ```
 
-### 3. Configure Build
+### 4. Configure Build
 
 Ask user (use AskUserQuestion tool):
 
@@ -75,7 +89,7 @@ Ask user (use AskUserQuestion tool):
 
 **Retry limit:** (default: 3)
 
-### 4. Initialize State
+### 5. Initialize State
 
 Create `docs/office/build-state.yaml` with initial structure.
 
@@ -88,7 +102,7 @@ grep -E "^- id:|^  name:" docs/office/tasks.yaml | paste - - | \
 
 Then write the build-state.yaml with phases set to `pending`.
 
-### 5. Start Dashboard
+### 6. Start Dashboard
 
 **REQUIRED:** Invoke `/office:dashboard` skill to start build dashboard.
 
@@ -152,7 +166,7 @@ This keeps build-state.yaml out of orchestrator context entirely.
 
 **IMPORTANT:** To run phases in parallel, invoke multiple Task tools in a SINGLE message.
 
-**CRITICAL - Pass file PATHS, not contents:**
+**CRITICAL:** Embed prompt templates directly (subagents cannot access plugin cache files).
 
 ```yaml
 For each ready phase:
@@ -164,14 +178,35 @@ For each ready phase:
     prompt: |
       You are a phase executor. Work in worktree: [worktree-absolute-path]
 
-      ## File Paths (READ THESE - they are NOT in this prompt)
+      ## File Paths (READ THESE - they are in the project, not this prompt)
       - Tasks file: [project]/docs/office/tasks.yaml
       - Phase spec: [project]/spec/phase_[N]_[name]/spec.md
       - Build state: [project]/docs/office/build-state.yaml
-      - Prompt templates directory: [skill-base-path]/prompts/
 
       ## Your Phase
       Phase ID: [phase-id]
+
+      ## Prompt Templates (embedded - subagents cannot access plugin files)
+
+      ### IMPLEMENTER TEMPLATE
+      ```
+      [paste implementer.md content here]
+      ```
+
+      ### CLARIFIER TEMPLATE
+      ```
+      [paste clarifier.md content here]
+      ```
+
+      ### SPEC-REVIEWER TEMPLATE
+      ```
+      [paste spec-reviewer.md content here]
+      ```
+
+      ### CODE-REVIEWER TEMPLATE
+      ```
+      [paste code-reviewer.md content here]
+      ```
 
       ## Instructions
       1. Read tasks.yaml to get tasks for phase [phase-id]
@@ -181,7 +216,7 @@ For each ready phase:
       ### Pipeline per Task
 
       1. IMPLEMENTER
-         Read prompt template: [skill-base-path]/prompts/implementer.md
+         Use the IMPLEMENTER TEMPLATE above
          Model: [config.models.implementer]
 
          Dispatch subagent with:
@@ -195,7 +230,7 @@ For each ready phase:
          - ERROR → retry up to [retry_limit], then FLAG
 
       2. CLARIFIER (only if NEED_CLARIFICATION)
-         Read prompt template: [skill-base-path]/prompts/clarifier.md
+         Use the CLARIFIER TEMPLATE above
          Model: [config.models.clarifier]
 
          Dispatch subagent, wait for response:
@@ -203,7 +238,7 @@ For each ready phase:
          - FLAG → exit with flag (clarifier_blocked)
 
       3. SPEC-REVIEWER
-         Read prompt template: [skill-base-path]/prompts/spec-reviewer.md
+         Use the SPEC-REVIEWER TEMPLATE above
          Model: [config.models.spec_reviewer]
 
          Dispatch subagent, wait for response:
@@ -213,7 +248,7 @@ For each ready phase:
            - If exhausted → FLAG (spec_review_exhausted)
 
       4. CODE-REVIEWER
-         Read prompt template: [skill-base-path]/prompts/code-reviewer.md
+         Use the CODE-REVIEWER TEMPLATE above
          Model: [config.models.code_reviewer]
 
          Dispatch subagent, wait for response:
@@ -374,13 +409,18 @@ To stay under ~50k context in orchestrator:
 |------|----------|--------------|
 | tasks.yaml | Pass path to subagents | ~0 |
 | spec files | Pass path to subagents | ~0 |
-| prompt templates | Pass path to subagents | ~0 |
+| prompt templates | Read ONCE, embed in phase prompts | ~250 (one-time) |
 | build-state.yaml | Use haiku state-updater | ~0 |
 | Task output | grep for status lines only | ~100-500 |
 | Skill content | Loaded once at start | ~5k |
 | Conversation | Accumulates | Variable |
 
 **Total orchestrator overhead: ~5-10k** (vs 85k+ before)
+
+**Why templates must be embedded:**
+- Subagents run in sandboxed environments
+- They cannot access `~/.claude/plugins/cache/...` paths
+- Only project directory files are accessible to subagents
 
 ## Files
 
