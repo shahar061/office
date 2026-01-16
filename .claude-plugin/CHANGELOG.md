@@ -2,6 +2,19 @@
 
 All notable changes to the Office plugin will be documented in this file.
 
+## [0.2.56] - 2026-01-16
+
+### Changed
+
+- **Worktree per phase for /build**: Restored safe parallel execution with git isolation
+  - Each phase gets its own worktree (no git conflicts between phases)
+  - Independent phases run in parallel (respects `depends_on` in tasks.yaml)
+  - Tasks run sequentially within a phase (safe commits)
+  - Build branch isolates all work from main
+  - Orchestrator merges phases and resolves any conflicts
+  - Final output is a PR to main (not direct merge)
+  - Warrooming now ensures phase-level `depends_on` is always populated
+
 ## [0.2.54] - 2026-01-16
 
 ### Changed
