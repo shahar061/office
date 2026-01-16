@@ -166,17 +166,18 @@ This keeps build-state.yaml out of orchestrator context entirely.
 
 **IMPORTANT:** To run phases in parallel, invoke multiple Task tools in a SINGLE message.
 
-**CRITICAL:** Embed prompt templates directly (subagents cannot access plugin cache files).
+**CRITICAL:**
+- Use `office:phase-executor` agent - it has `allowedTools` configured for autonomous operation
+- Embed prompt templates directly (subagents cannot access plugin cache files)
 
 ```yaml
 For each ready phase:
   Task tool:
-    subagent_type: general-purpose
+    subagent_type: office:phase-executor   # Has Read/Write/Edit/Bash/Task permissions
     run_in_background: true
-    model: sonnet
     description: "Execute phase: [phase-id]"
     prompt: |
-      You are a phase executor. Work in worktree: [worktree-absolute-path]
+      Work in worktree: [worktree-absolute-path]
 
       ## File Paths (READ THESE - they are in the project, not this prompt)
       - Tasks file: [project]/docs/office/tasks.yaml
@@ -185,6 +186,11 @@ For each ready phase:
 
       ## Your Phase
       Phase ID: [phase-id]
+
+      ## Configuration
+      Models: implementer=[implementer], clarifier=[clarifier],
+              spec_reviewer=[spec_reviewer], code_reviewer=[code_reviewer]
+      Retry limit: [retry_limit]
 
       ## Prompt Templates (embedded - subagents cannot access plugin files)
 
@@ -211,7 +217,7 @@ For each ready phase:
       ## Instructions
       1. Read tasks.yaml to get tasks for phase [phase-id]
       2. Read the phase spec file for implementation details
-      3. For EACH task, follow this pipeline:
+      3. For EACH task, follow the pipeline defined in your agent persona:
 
       ### Pipeline per Task
 
