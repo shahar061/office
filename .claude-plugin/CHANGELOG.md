@@ -2,6 +2,34 @@
 
 All notable changes to the Office plugin will be documented in this file.
 
+## [0.2.50] - 2026-01-16
+
+### Changed
+
+- **DAG-based parallel task execution**: Tasks within a phase now run in parallel based on dependencies
+  - Phases still run sequentially (one at a time)
+  - Tasks with satisfied dependencies spawn simultaneously
+  - Per-task git branches for isolation during parallel execution
+
+- **No more polling**: Orchestrator waits idle while phase executor runs
+  - Uses `TaskOutput` with `block: true` instead of polling loop
+  - Dramatically reduces context usage (~30k vs 220k+)
+
+- **Per-phase status files**: Each phase executor owns its status file
+  - New directory structure: `docs/office/build/phase-{id}/status.yaml`
+  - No race conditions from shared state
+  - Append-only `progress.log` for event tracking
+
+### Updated
+
+- **Dashboard**: Now watches `build/` directory recursively
+  - Handles both `on_modified` and `on_created` events
+  - Aggregates per-phase status files for real-time display
+
+- **Phase executor**: Rewritten with DAG execution algorithm
+  - Added `TaskOutput` to allowedTools for wait-for-any pattern
+  - Status file helpers using sed for atomic updates
+
 ## [0.2.49] - 2026-01-16
 
 ### Fixed
