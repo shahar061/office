@@ -188,6 +188,11 @@ def load_state():
     # Merge data for frontend
     data['merged'] = merge_task_data(data['tasks'], data['phases_state'])
 
+    # Parse activity from progress.log files
+    events = parse_progress_logs(build_dir)
+    data['activity'] = events
+    data['task_durations'] = calculate_task_durations(events)
+
     return data
 
 
@@ -265,6 +270,76 @@ def merge_task_data(tasks_yaml, phases_state):
         })
 
     return merged
+
+
+def parse_progress_logs(build_dir):
+    """Parse all progress.log files and return sorted events."""
+    events = []
+
+    if not build_dir.exists():
+        return events
+
+    for phase_dir in build_dir.glob('phase-*'):
+        log_file = phase_dir / 'progress.log'
+        if log_file.exists():
+            phase_id = phase_dir.name
+            try:
+                for line in log_file.read_text().splitlines():
+                    line = line.strip()
+                    if not line:
+                        continue
+                    # Parse: "2026-01-16T17:22:00+02:00 TASK_DONE:be-005"
+                    parts = line.split(' ', 1)
+                    if len(parts) == 2:
+                        timestamp, event = parts
+                        events.append({
+                            'timestamp': timestamp,
+                            'event': event,
+                            'phase': phase_id
+                        })
+            except Exception as e:
+                print(f"Error parsing {log_file}: {e}")
+
+    return sorted(events, key=lambda e: e['timestamp'], reverse=True)[:50]
+
+
+def calculate_task_durations(events):
+    """Calculate how long each task took from TASK_START to TASK_DONE."""
+    from datetime import datetime
+
+    starts = {}  # task_id -> start_time
+    durations = {}  # task_id -> duration_seconds
+
+    def parse_timestamp(ts):
+        # Handle ISO format with timezone
+        try:
+            # Try parsing with timezone
+            if '+' in ts or ts.endswith('Z'):
+                # Remove timezone for simpler parsing
+                ts_clean = ts.replace('Z', '+00:00')
+                if '+' in ts_clean:
+                    ts_parts = ts_clean.rsplit('+', 1)
+                    ts_clean = ts_parts[0]
+                return datetime.fromisoformat(ts_clean)
+            return datetime.fromisoformat(ts)
+        except ValueError:
+            return None
+
+    for event in sorted(events, key=lambda e: e['timestamp']):
+        if ':' in event['event']:
+            event_type, task_id = event['event'].split(':', 1)
+            ts = parse_timestamp(event['timestamp'])
+            if not ts:
+                continue
+
+            if event_type == 'TASK_START':
+                starts[task_id] = ts
+            elif event_type == 'TASK_DONE':
+                if task_id in starts:
+                    duration = (ts - starts[task_id]).total_seconds()
+                    durations[task_id] = duration
+
+    return durations
 
 
 def broadcast_state():
