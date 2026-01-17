@@ -7,8 +7,11 @@ let state = {
     features: [],
     buildState: null,
     tasks: null,
+    activity: [],
+    taskDurations: {},
     connected: false,
-    currentView: 'feature', // 'feature' or 'agent'
+    currentView: 'phase', // 'phase', 'feature', or 'agent'
+    expandedPhase: null,
     stuckThreshold: 30 * 60 * 1000, // 30 minutes in ms
 };
 
@@ -20,11 +23,20 @@ const RECONNECT_BASE_DELAY = 1000;
 
 // DOM Elements
 const elements = {
+    phaseView: document.getElementById('phase-view'),
     featureView: document.getElementById('feature-view'),
     agentView: document.getElementById('agent-view'),
     emptyState: document.getElementById('empty-state'),
+    btnPhaseView: document.getElementById('btn-phase-view'),
     btnFeatureView: document.getElementById('btn-feature-view'),
     btnAgentView: document.getElementById('btn-agent-view'),
+    phaseCards: document.getElementById('phase-cards'),
+    expandedPhase: document.getElementById('expanded-phase'),
+    activityFeed: document.getElementById('activity-feed'),
+    buildInfo: document.getElementById('build-info'),
+    buildSession: document.getElementById('build-session'),
+    buildProgressBar: document.getElementById('build-progress-bar'),
+    buildProgressPct: document.getElementById('build-progress-pct'),
     statusIndicator: document.getElementById('status-indicator'),
     statusText: document.getElementById('status-text'),
     progressText: document.getElementById('progress-text'),
@@ -42,6 +54,7 @@ function init() {
     }
 
     // Set up view toggle
+    elements.btnPhaseView.addEventListener('click', () => setView('phase'));
     elements.btnFeatureView.addEventListener('click', () => setView('feature'));
     elements.btnAgentView.addEventListener('click', () => setView('agent'));
 
@@ -131,6 +144,8 @@ function updateState(data) {
     state.features = data.merged || [];
     state.buildState = data.build_state;
     state.tasks = data.tasks;
+    state.activity = data.activity || [];
+    state.taskDurations = data.task_durations || {};
 
     render();
 }
@@ -138,12 +153,15 @@ function updateState(data) {
 // View Management
 function setView(view) {
     state.currentView = view;
+    state.expandedPhase = null; // Reset expanded phase when changing views
 
     // Update toggle buttons
+    elements.btnPhaseView.classList.toggle('active', view === 'phase');
     elements.btnFeatureView.classList.toggle('active', view === 'feature');
     elements.btnAgentView.classList.toggle('active', view === 'agent');
 
     // Show/hide views
+    elements.phaseView.classList.toggle('hidden', view !== 'phase');
     elements.featureView.classList.toggle('hidden', view !== 'feature');
     elements.agentView.classList.toggle('hidden', view !== 'agent');
 
