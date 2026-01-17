@@ -65,9 +65,15 @@ tasks:
 
 ### 4. Initialize progress.log
 
-```bash
-echo "$(date -Iseconds) PHASE_START" >> {project_path}/docs/office/build/phase-{id}/progress.log
+Use the Write tool to create the initial log entry:
+
+```yaml
+Write tool:
+  file_path: {project_path}/docs/office/build/phase-{id}/progress.log
+  content: "{ISO timestamp} PHASE_START\n"
 ```
+
+**Do NOT use bash echo** - it requires permission prompts that block execution.
 
 ## Sequential Execution Algorithm
 
@@ -182,20 +188,20 @@ Edit tool:
 
 This avoids shell command issues (sed waiting on stdin if malformed).
 
-For `progress.log`, use Write tool to append:
+For `progress.log`, use Read + Write tools to append:
 
 ```yaml
-# Read current content first, then write with appended line
-Read: {project_path}/docs/office/build/phase-{id}/progress.log
-Write: {existing_content}\n{timestamp} {EVENT}
+# 1. Read current content
+Read tool:
+  file_path: {project_path}/docs/office/build/phase-{id}/progress.log
+
+# 2. Write with appended line
+Write tool:
+  file_path: {project_path}/docs/office/build/phase-{id}/progress.log
+  content: "{existing_content}{ISO timestamp} {EVENT}\n"
 ```
 
-Or if you must use Bash for logging (simpler for append):
-```bash
-echo "$(date -Iseconds) {EVENT}" >> "{project_path}/docs/office/build/phase-{id}/progress.log"
-```
-
-**Never chain multiple sed commands with `&&`** - each file operation should be separate.
+**Do NOT use bash echo for logging** - it requires permission prompts that block background agent execution.
 
 ## Output Format
 
