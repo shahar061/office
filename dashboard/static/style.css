@@ -141,3 +141,109 @@
 .error-message.expanded {
     @apply block;
 }
+
+/* Phase Cards */
+.phase-card {
+    @apply bg-gray-800 rounded-lg p-4 cursor-pointer transition-all min-w-[140px];
+    @apply border-2 border-transparent hover:border-gray-600;
+}
+
+.phase-card.status-pending,
+.phase-card.status-blocked {
+    @apply opacity-60;
+}
+
+.phase-card.status-in_progress {
+    @apply border-yellow-400/50;
+}
+
+.phase-card.status-completed {
+    @apply border-green-500/50;
+}
+
+.phase-card.status-failed {
+    @apply border-red-500/50;
+}
+
+.phase-card.expanded {
+    @apply ring-2 ring-blue-500;
+}
+
+/* Phase Status Icons */
+.phase-status-icon {
+    @apply text-2xl mb-2;
+}
+
+/* Phase Arrow */
+.phase-arrow {
+    @apply text-gray-500 text-xl self-center;
+}
+
+/* Expanded Phase Panel */
+.expanded-phase-panel {
+    @apply bg-gray-800/50 rounded-lg p-6;
+}
+
+.expanded-phase-header {
+    @apply flex items-center justify-between mb-4 pb-4 border-b border-gray-700;
+}
+
+.expanded-phase-tasks {
+    @apply grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3;
+}
+
+/* Task Mini Card (for expanded phase) */
+.task-mini {
+    @apply bg-gray-700 rounded-lg p-3 text-center;
+}
+
+.task-mini.status-queued {
+    @apply border-l-4 border-gray-500;
+}
+
+.task-mini.status-in_progress {
+    @apply border-l-4 border-yellow-400;
+}
+
+.task-mini.status-completed,
+.task-mini.status-done {
+    @apply border-l-4 border-green-500;
+}
+
+.task-mini.status-failed {
+    @apply border-l-4 border-red-500;
+}
+
+/* Activity Feed */
+.activity-item {
+    @apply flex items-start gap-3 py-2 border-b border-gray-700/50 last:border-0;
+}
+
+.activity-time {
+    @apply text-xs text-gray-500 font-mono w-16 flex-shrink-0;
+}
+
+.activity-event {
+    @apply text-sm text-gray-300 flex-1;
+}
+
+.activity-phase {
+    @apply text-xs text-gray-500 px-2 py-0.5 bg-gray-700 rounded;
+}
+
+/* Activity event types */
+.activity-item.phase-start .activity-event {
+    @apply text-blue-400;
+}
+
+.activity-item.phase-complete .activity-event {
+    @apply text-green-400;
+}
+
+.activity-item.task-done .activity-event {
+    @apply text-green-300;
+}
+
+.activity-item.task-start .activity-event {
+    @apply text-yellow-300;
+}
