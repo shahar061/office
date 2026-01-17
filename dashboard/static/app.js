@@ -272,23 +272,240 @@ function render() {
     // Check for empty state
     if (!state.features.length) {
         elements.emptyState.classList.remove('hidden');
+        elements.phaseView.classList.add('hidden');
         elements.featureView.classList.add('hidden');
         elements.agentView.classList.add('hidden');
+        elements.buildInfo.classList.add('hidden');
         return;
     }
 
     elements.emptyState.classList.add('hidden');
 
+    // Update build info bar
+    updateBuildInfo();
+
     // Update progress
     updateProgress();
 
     // Render current view
-    if (state.currentView === 'feature') {
+    if (state.currentView === 'phase') {
+        renderPhaseView();
+    } else if (state.currentView === 'feature') {
         renderFeatureView();
     } else {
         renderAgentView();
     }
 }
+
+function updateBuildInfo() {
+    if (!state.buildState?.build) {
+        elements.buildInfo.classList.add('hidden');
+        return;
+    }
+
+    elements.buildInfo.classList.remove('hidden');
+
+    const sessionId = state.buildState.build.session_id || 'Unknown';
+    elements.buildSession.textContent = `Build: ${sessionId}`;
+
+    // Calculate progress
+    let total = 0;
+    let completed = 0;
+    state.features.forEach(feature => {
+        feature.tasks.forEach(task => {
+            total++;
+            if (task.status === 'done' || task.status === 'completed') {
+                completed++;
+            }
+        });
+    });
+
+    const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+    elements.buildProgressBar.style.width = `${percent}%`;
+    elements.buildProgressPct.textContent = `${percent}%`;
+}
+
+function renderPhaseView() {
+    renderPhaseCards();
+    renderExpandedPhase();
+    renderActivityFeed();
+}
+
+function renderPhaseCards() {
+    const container = elements.phaseCards;
+    container.innerHTML = '';
+
+    state.features.forEach((phase, index) => {
+        // Add arrow between phases (except first)
+        if (index > 0) {
+            const arrow = document.createElement('span');
+            arrow.className = 'phase-arrow';
+            arrow.textContent = '→';
+            container.appendChild(arrow);
+        }
+
+        // Count tasks
+        const totalTasks = phase.tasks.length;
+        const doneTasks = phase.tasks.filter(t =>
+            t.status === 'done' || t.status === 'completed'
+        ).length;
+
+        // Determine status icon
+        let statusIcon = '⏳'; // pending/blocked
+        if (phase.status === 'in_progress') statusIcon = '🔄';
+        else if (phase.status === 'completed') statusIcon = '✅';
+        else if (phase.status === 'failed') statusIcon = '❌';
+
+        const card = document.createElement('div');
+        card.className = `phase-card status-${phase.status || 'pending'}`;
+        if (state.expandedPhase === phase.id) {
+            card.classList.add('expanded');
+        }
+
+        card.innerHTML = `
+            <div class="phase-status-icon">${statusIcon}</div>
+            <div class="text-sm font-medium mb-1">${escapeHtml(phase.name)}</div>
+            <div class="text-xs text-gray-500">${phase.id}</div>
+            <div class="text-xs text-gray-400 mt-2">${doneTasks}/${totalTasks} tasks</div>
+        `;
+
+        card.addEventListener('click', () => togglePhaseExpand(phase.id));
+        container.appendChild(card);
+    });
+}
+
+function togglePhaseExpand(phaseId) {
+    if (state.expandedPhase === phaseId) {
+        state.expandedPhase = null;
+    } else {
+        state.expandedPhase = phaseId;
+    }
+    render();
+}
+
+function renderExpandedPhase() {
+    const container = elements.expandedPhase;
+
+    if (!state.expandedPhase) {
+        container.classList.add('hidden');
+        return;
+    }
+
+    const phase = state.features.find(f => f.id === state.expandedPhase);
+    if (!phase) {
+        container.classList.add('hidden');
+        return;
+    }
+
+    container.classList.remove('hidden');
+
+    // Count by status
+    const doneTasks = phase.tasks.filter(t => t.status === 'done' || t.status === 'completed').length;
+
+    container.innerHTML = `
+        <div class="expanded-phase-panel">
+            <div class="expanded-phase-header">
+                <div>
+                    <h3 class="text-lg font-medium">${escapeHtml(phase.name)}</h3>
+                    <p class="text-sm text-gray-400">${phase.id} • ${doneTasks}/${phase.tasks.length} tasks complete</p>
+                </div>
+                <button onclick="togglePhaseExpand('${phase.id}')" class="text-gray-400 hover:text-white text-sm">
+                    [Collapse]
+                </button>
+            </div>
+            <div class="expanded-phase-tasks">
+                ${phase.tasks.map(task => renderTaskMini(task)).join('')}
+            </div>
+        </div>
+    `;
+}
+
+function renderTaskMini(task) {
+    const duration = state.taskDurations[task.id];
+    const durationStr = duration ? formatDuration(duration) : '';
+
+    let statusIcon = '⏳';
+    if (task.status === 'in_progress') statusIcon = '🔄';
+    else if (task.status === 'done' || task.status === 'completed') statusIcon = '✅';
+    else if (task.status === 'failed') statusIcon = '❌';
+
+    return `
+        <div class="task-mini status-${task.status || 'queued'}">
+            <div class="text-lg mb-1">${statusIcon}</div>
+            <div class="text-xs font-medium">${escapeHtml(task.id)}</div>
+            <div class="text-xs text-gray-400 truncate" title="${escapeHtml(task.title)}">${escapeHtml(task.title)}</div>
+            ${durationStr ? `<div class="text-xs text-gray-500 mt-1">${durationStr}</div>` : ''}
+        </div>
+    `;
+}
+
+function formatDuration(seconds) {
+    if (seconds < 60) return `${Math.round(seconds)}s`;
+    const minutes = Math.floor(seconds / 60);
+    const secs = Math.round(seconds % 60);
+    if (minutes < 60) return `${minutes}m ${secs}s`;
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return `${hours}h ${mins}m`;
+}
+
+function renderActivityFeed() {
+    const container = elements.activityFeed;
+
+    if (!state.activity.length) {
+        container.innerHTML = '<div class="text-sm text-gray-500 italic">No activity yet</div>';
+        return;
+    }
+
+    container.innerHTML = state.activity.slice(0, 20).map(event => {
+        const time = formatActivityTime(event.timestamp);
+        const { text, type } = formatActivityEvent(event.event);
+
+        return `
+            <div class="activity-item ${type}">
+                <span class="activity-time">${time}</span>
+                <span class="activity-event">${escapeHtml(text)}</span>
+                <span class="activity-phase">${event.phase}</span>
+            </div>
+        `;
+    }).join('');
+}
+
+function formatActivityTime(timestamp) {
+    try {
+        const date = new Date(timestamp);
+        return date.toLocaleTimeString('en-US', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+        });
+    } catch {
+        return '--:--';
+    }
+}
+
+function formatActivityEvent(event) {
+    if (event === 'PHASE_START') {
+        return { text: 'Phase started', type: 'phase-start' };
+    }
+    if (event === 'PHASE_COMPLETE') {
+        return { text: 'Phase completed', type: 'phase-complete' };
+    }
+    if (event.startsWith('TASK_START:')) {
+        const taskId = event.split(':')[1];
+        return { text: `Task ${taskId} started`, type: 'task-start' };
+    }
+    if (event.startsWith('TASK_DONE:')) {
+        const taskId = event.split(':')[1];
+        const duration = state.taskDurations[taskId];
+        const durationStr = duration ? ` (${formatDuration(duration)})` : '';
+        return { text: `Task ${taskId} done${durationStr}`, type: 'task-done' };
+    }
+    return { text: event, type: '' };
+}
+
+// Make togglePhaseExpand available globally for onclick
+window.togglePhaseExpand = togglePhaseExpand;
 
 // Feature View Rendering
 function renderFeatureView() {
