@@ -2,6 +2,43 @@
 
 All notable changes to the Office plugin will be documented in this file.
 
+## [0.2.60] - 2026-01-17
+
+### Added
+
+- **Dashboard document viewer**: View design documents directly in dashboard
+  - New `/api/documents` endpoint lists available plan documents
+  - New `/api/documents/<doc_id>` endpoint returns document content
+  - Supports vision brief, PRD, market analysis, system design, and implementation plan
+  - Markdown rendering in browser
+
+- **Dashboard sidebar navigation**: Fixed sidebar with page navigation
+  - Multi-page structure with `switchPage()` function
+  - Navigation icons for different views
+  - Connection status indicator in sidebar
+
+- **Enhanced task cards**: Improved visual feedback for task status
+  - Status strip (left edge color indicator)
+  - Agent badges with color coding
+  - Time warnings for long-running tasks
+  - Stuck animation for blocked tasks
+  - Expandable error details
+  - State change animations
+
+- **Dashboard view modes**: Multiple ways to visualize build progress
+  - Phase-centric view (default)
+  - Feature-level view
+  - Agent-level view with mini cards for completed tasks
+  - Status columns for organized task display
+
+### Changed
+
+- **Dashboard visual overhaul**: Complete styling refresh
+  - Status-specific card borders and glow effects
+  - Pulse animations for in-progress tasks
+  - Agent color coding throughout UI
+  - Responsive layout with proper scrolling
+
 ## [0.2.58] - 2026-01-16
 
 ### Fixed

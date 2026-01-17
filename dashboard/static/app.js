@@ -13,6 +13,12 @@ let state = {
     currentView: 'phase', // 'phase', 'feature', or 'agent'
     expandedPhase: null,
     stuckThreshold: 30 * 60 * 1000, // 30 minutes in ms
+    // Navigation state
+    currentPage: 'dashboard', // 'dashboard' or 'plan'
+    // Plan page state
+    documents: [],
+    currentDoc: null,
+    docCache: {}, // Cache loaded documents
 };
 
 // WebSocket
@@ -23,6 +29,7 @@ const RECONNECT_BASE_DELAY = 1000;
 
 // DOM Elements
 const elements = {
+    // Dashboard view elements
     phaseView: document.getElementById('phase-view'),
     featureView: document.getElementById('feature-view'),
     agentView: document.getElementById('agent-view'),
@@ -43,6 +50,16 @@ const elements = {
     elapsedTime: document.getElementById('elapsed-time'),
     reconnectOverlay: document.getElementById('reconnect-overlay'),
     reconnectAttempt: document.getElementById('reconnect-attempt'),
+    // Navigation elements
+    mainNav: document.getElementById('main-nav'),
+    dashboardView: document.getElementById('dashboard-view'),
+    planView: document.getElementById('plan-view'),
+    sidebarStatusIndicator: document.getElementById('sidebar-status-indicator'),
+    sidebarStatusText: document.getElementById('sidebar-status-text'),
+    // Plan view elements
+    docTabs: document.getElementById('doc-tabs'),
+    documentContent: document.getElementById('document-content'),
+    planDocCount: document.getElementById('plan-doc-count'),
 };
 
 // Initialize
@@ -53,16 +70,30 @@ function init() {
         state.stuckThreshold = parseInt(params.get('stuck_threshold')) * 60 * 1000;
     }
 
+    // Check for page param in URL
+    if (params.has('page')) {
+        state.currentPage = params.get('page');
+    }
+
     // Set up view toggle
     elements.btnPhaseView.addEventListener('click', () => setView('phase'));
     elements.btnFeatureView.addEventListener('click', () => setView('feature'));
     elements.btnAgentView.addEventListener('click', () => setView('agent'));
+
+    // Render sidebar navigation
+    renderMainNav();
+
+    // Load available documents for Plan page
+    loadDocumentList();
 
     // Connect WebSocket
     connect();
 
     // Update elapsed time every second
     setInterval(updateElapsedTime, 1000);
+
+    // Apply initial page view
+    switchPage(state.currentPage);
 }
 
 // WebSocket Connection
@@ -643,30 +674,66 @@ function renderTaskCardMini(task) {
     `;
 }
 
+// Status icon configuration
+const statusConfig = {
+    queued: { icon: '&#128337;', label: 'Queued' },      // Clock
+    assigned: { icon: '&#128100;', label: 'Assigned' },  // Person
+    in_progress: { icon: '&#9881;', label: 'In Progress' }, // Gear (spinning)
+    in_review: { icon: '&#128269;', label: 'In Review' }, // Magnifying glass
+    completed: { icon: '&#10004;', label: 'Completed' }, // Check mark
+    done: { icon: '&#10004;', label: 'Done' },           // Check mark
+    failed: { icon: '&#10060;', label: 'Failed' }        // X mark
+};
+
+// Time warning threshold (in seconds)
+function getTimeClass(seconds) {
+    if (seconds > 300) return 'time-danger';  // > 5 min
+    if (seconds > 120) return 'time-warning'; // > 2 min
+    return '';
+}
+
 // Task Card Rendering
 function renderTaskCard(task, showFeature = false) {
     const stuck = isTaskStuck(task);
     const stuckClass = stuck ? 'stuck' : '';
     const timeInState = formatTimeInState(task);
+    const status = task.status || 'queued';
+    const config = statusConfig[status] || statusConfig.queued;
+
+    // Status icon with pulse for in_progress
+    const pulseHtml = status === 'in_progress' ? '<div class="status-pulse"></div>' : '';
+    const spinnerClass = status === 'in_progress' ? 'status-spinner' : '';
+
+    // Agent badge
+    let agentBadge = '';
+    if (task.agent) {
+        const agentClass = `agent-${task.agent}`;
+        const agentName = task.agent.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+        agentBadge = `
+            <span class="agent-badge ${agentClass}">
+                <span class="agent-badge-dot"></span>
+                ${escapeHtml(agentName)}
+            </span>
+        `;
+    }
 
     // Retry badge
     let retryBadge = '';
     if (task.retry_count > 0) {
         const badgeClass = task.retry_count > 2 ? 'danger' : 'warning';
-        retryBadge = `<span class="retry-badge ${badgeClass}">Retry: ${task.retry_count}</span>`;
+        retryBadge = `<span class="retry-badge ${badgeClass}">&#8635; ${task.retry_count}</span>`;
     }
 
     // Review warning badge
     let reviewWarningBadge = '';
     if (task.review_status === 'has-warnings') {
-        reviewWarningBadge = '<span class="review-warning-badge">CR Warnings</span>';
+        reviewWarningBadge = '<span class="review-warning-badge">&#9888; Review</span>';
     }
 
     // Dependencies
     let depsHtml = '';
     if (task.depends_on && task.depends_on.length > 0) {
         const blockedBy = task.depends_on.filter(depId => {
-            // Find if dependency is not done
             for (const f of state.features) {
                 const depTask = f.tasks.find(t => t.id === depId);
                 if (depTask && depTask.status !== 'done' && depTask.status !== 'completed') {
@@ -677,7 +744,7 @@ function renderTaskCard(task, showFeature = false) {
         });
 
         if (blockedBy.length > 0) {
-            depsHtml = `<div class="dep-link mt-2">Blocked by: ${blockedBy.join(', ')}</div>`;
+            depsHtml = `<div class="task-card-deps"><span class="dep-link">&#128279; Blocked by: <span class="dep-blocked">${blockedBy.join(', ')}</span></span></div>`;
         }
     }
 
@@ -694,54 +761,92 @@ function renderTaskCard(task, showFeature = false) {
     });
 
     if (blocking.length > 0) {
-        depsHtml += `<div class="dep-link">Blocking: ${blocking.join(', ')}</div>`;
+        depsHtml += `<div class="task-card-deps"><span class="dep-link">&#8594; Blocking: <span class="dep-blocking">${blocking.join(', ')}</span></span></div>`;
     }
 
     // Error message
     let errorHtml = '';
     if (task.error) {
-        const errorId = `error-${task.id}`;
         errorHtml = `
-            <button class="text-xs text-red-400 hover:text-red-300 mt-2" onclick="toggleError('${errorId}')">
-                Show error
-            </button>
-            <div id="${errorId}" class="error-message">${escapeHtml(task.error)}</div>
+            <details class="error-details">
+                <summary class="error-summary">&#9888; View error details</summary>
+                <div class="error-content">
+                    <code>${escapeHtml(task.error)}</code>
+                </div>
+            </details>
         `;
     }
 
     // Feature tag (for agent view)
     const featureTag = showFeature && task.feature
-        ? `<span class="text-xs px-2 py-0.5 rounded bg-gray-700 text-gray-400">${escapeHtml(task.feature)}</span>`
+        ? `<span class="text-xs px-2 py-0.5 rounded bg-gray-700 text-gray-400 mb-1 inline-block">${escapeHtml(task.feature)}</span>`
         : '';
 
     // Current step
     let stepInfo = '';
-    if (task.current_step && task.status === 'in_progress') {
-        stepInfo = `<div class="text-xs text-gray-500 mt-1">Step ${task.current_step}/5</div>`;
+    if (task.current_step && status === 'in_progress') {
+        const progress = (task.current_step / 5) * 100;
+        stepInfo = `
+            <div class="mt-2">
+                <div class="flex items-center justify-between text-xs text-gray-500 mb-1">
+                    <span>Progress</span>
+                    <span>Step ${task.current_step}/5</span>
+                </div>
+                <div class="h-1 bg-gray-700 rounded-full overflow-hidden">
+                    <div class="h-full bg-amber-500 transition-all" style="width: ${progress}%"></div>
+                </div>
+            </div>
+        `;
+    }
+
+    // Time in state with warning class
+    let timeHtml = '';
+    if (timeInState) {
+        const timeClass = stuck ? 'time-danger' : '';
+        timeHtml = `
+            <span class="task-card-meta-item ${timeClass} has-tooltip relative">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12,6 12,12 16,14"></polyline>
+                </svg>
+                ${timeInState}
+                ${stuck ? '<span class="tooltip">Task may be stuck</span>' : ''}
+            </span>
+        `;
     }
 
     return `
-        <div class="task-card status-${task.status || 'queued'} ${stuckClass}">
-            <div class="flex items-start justify-between gap-2">
-                <div class="flex-1 min-w-0">
-                    ${featureTag}
-                    <div class="font-medium text-sm mt-1">${escapeHtml(task.id)}</div>
-                    <div class="text-sm text-gray-300 mt-0.5">${escapeHtml(task.title)}</div>
+        <div class="task-card status-${status} ${stuckClass}">
+            <!-- Header -->
+            <div class="task-card-header">
+                <div class="task-card-title-group">
+                    <!-- Status Icon -->
+                    <div class="status-icon-wrapper">
+                        ${pulseHtml}
+                        <div class="status-icon status-${status} ${spinnerClass}">
+                            ${config.icon}
+                        </div>
+                    </div>
+                    <!-- Title + ID -->
+                    <div class="min-w-0 flex-1">
+                        ${featureTag}
+                        <div class="task-card-title" title="${escapeHtml(task.title)}">${escapeHtml(task.title)}</div>
+                        <div class="task-card-id">${escapeHtml(task.id)}</div>
+                    </div>
                 </div>
-                <div class="flex flex-col gap-1">
-                    ${retryBadge}
-                    ${reviewWarningBadge}
+                <!-- Right side: Agent + Badges -->
+                <div class="flex flex-col items-end gap-1">
+                    ${agentBadge}
+                    <div class="flex gap-1">
+                        ${retryBadge}
+                        ${reviewWarningBadge}
+                    </div>
                 </div>
             </div>
 
-            <div class="flex items-center justify-between mt-3 text-xs text-gray-500">
-                <div class="flex items-center gap-2">
-                    ${task.agent ? `<span>Agent: ${task.agent}</span>` : ''}
-                </div>
-                ${timeInState ? `<span class="has-tooltip relative">
-                    ${timeInState} in state
-                    ${stuck ? '<span class="tooltip">Task may be stuck</span>' : ''}
-                </span>` : ''}
+            <!-- Meta Row -->
+            <div class="task-card-meta">
+                ${timeHtml}
             </div>
 
             ${stepInfo}
@@ -764,6 +869,225 @@ function escapeHtml(text) {
     div.textContent = text;
     return div.innerHTML;
 }
+
+// ============================================
+// NAVIGATION
+// ============================================
+
+// SVG Icons for navigation
+const navIcons = {
+    dashboard: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
+    </svg>`,
+    plan: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+    </svg>`
+};
+
+function renderMainNav() {
+    const nav = elements.mainNav;
+    if (!nav) return;
+
+    const items = [
+        { id: 'dashboard', label: 'Dashboard', icon: navIcons.dashboard },
+        { id: 'plan', label: 'Plan', icon: navIcons.plan }
+    ];
+
+    nav.innerHTML = items.map(item => `
+        <button
+            onclick="switchPage('${item.id}')"
+            class="nav-item w-full flex items-center gap-3 px-4 py-3 text-left transition-colors
+                ${state.currentPage === item.id
+                    ? 'bg-gray-700 text-white border-l-2 border-blue-500'
+                    : 'text-gray-300 hover:bg-gray-700 hover:text-white border-l-2 border-transparent'}"
+        >
+            ${item.icon}
+            <span>${item.label}</span>
+        </button>
+    `).join('');
+}
+
+function switchPage(pageId) {
+    if (!elements.dashboardView || !elements.planView) return;
+
+    // Update state
+    state.currentPage = pageId;
+
+    // Update URL without reload
+    const url = new URL(window.location);
+    url.searchParams.set('page', pageId);
+    window.history.replaceState({}, '', url);
+
+    // Fade out current view
+    const dashboardView = elements.dashboardView;
+    const planView = elements.planView;
+
+    if (pageId === 'dashboard') {
+        planView.classList.add('hidden');
+        dashboardView.classList.remove('hidden');
+        dashboardView.style.opacity = '0';
+        requestAnimationFrame(() => {
+            dashboardView.style.opacity = '1';
+        });
+    } else if (pageId === 'plan') {
+        dashboardView.classList.add('hidden');
+        planView.classList.remove('hidden');
+        planView.style.opacity = '0';
+        requestAnimationFrame(() => {
+            planView.style.opacity = '1';
+        });
+
+        // Load first document if none selected
+        if (!state.currentDoc && state.documents.length > 0) {
+            loadDocument(state.documents[0].id);
+        }
+    }
+
+    // Update nav highlight
+    renderMainNav();
+}
+
+// Make switchPage available globally
+window.switchPage = switchPage;
+
+// ============================================
+// PLAN PAGE - DOCUMENT HANDLING
+// ============================================
+
+async function loadDocumentList() {
+    try {
+        const response = await fetch('/api/documents');
+        const data = await response.json();
+
+        if (data.documents) {
+            state.documents = data.documents;
+            renderDocTabs();
+
+            // Update document count
+            if (elements.planDocCount) {
+                elements.planDocCount.textContent = data.documents.length;
+            }
+        }
+    } catch (error) {
+        console.error('Failed to load document list:', error);
+    }
+}
+
+function renderDocTabs() {
+    const tabs = elements.docTabs;
+    if (!tabs) return;
+
+    tabs.innerHTML = state.documents.map(doc => `
+        <button
+            onclick="loadDocument('${doc.id}')"
+            class="doc-tab px-4 py-3 text-sm font-medium transition-colors whitespace-nowrap
+                ${state.currentDoc === doc.id
+                    ? 'text-blue-400 border-b-2 border-blue-500 bg-gray-900/50'
+                    : 'text-gray-400 hover:text-gray-200 hover:bg-gray-700/50 border-b-2 border-transparent'}"
+        >
+            ${escapeHtml(doc.label)}
+        </button>
+    `).join('');
+}
+
+async function loadDocument(docId) {
+    state.currentDoc = docId;
+    renderDocTabs();
+
+    const contentEl = elements.documentContent;
+    if (!contentEl) return;
+
+    // Show loading state
+    contentEl.innerHTML = `
+        <div class="flex items-center justify-center py-20 text-gray-500">
+            <div class="text-center">
+                <svg class="w-12 h-12 mx-auto mb-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                </svg>
+                <p>Loading document...</p>
+            </div>
+        </div>
+    `;
+
+    // Check cache first
+    if (state.docCache[docId]) {
+        renderMarkdown(state.docCache[docId]);
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/documents/${docId}`);
+        const data = await response.json();
+
+        if (data.error) {
+            contentEl.innerHTML = `
+                <div class="flex items-center justify-center py-20 text-red-400">
+                    <div class="text-center">
+                        <svg class="w-12 h-12 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                        </svg>
+                        <p>Failed to load document</p>
+                        <p class="text-sm text-gray-500 mt-2">${escapeHtml(data.error)}</p>
+                        <button onclick="loadDocument('${docId}')" class="mt-4 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm transition-colors">
+                            Try again
+                        </button>
+                    </div>
+                </div>
+            `;
+            return;
+        }
+
+        // Cache the content
+        state.docCache[docId] = data.content;
+
+        // Render markdown
+        renderMarkdown(data.content);
+
+    } catch (error) {
+        console.error('Failed to load document:', error);
+        contentEl.innerHTML = `
+            <div class="flex items-center justify-center py-20 text-red-400">
+                <div class="text-center">
+                    <svg class="w-12 h-12 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                    </svg>
+                    <p>Failed to load document</p>
+                    <button onclick="loadDocument('${docId}')" class="mt-4 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm transition-colors">
+                        Try again
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+}
+
+function renderMarkdown(content) {
+    const contentEl = elements.documentContent;
+    if (!contentEl) return;
+
+    // Check if marked library is available
+    if (typeof marked === 'undefined') {
+        contentEl.innerHTML = `<pre class="whitespace-pre-wrap text-gray-300">${escapeHtml(content)}</pre>`;
+        return;
+    }
+
+    // Configure marked options
+    marked.setOptions({
+        breaks: true,
+        gfm: true,
+        headerIds: true,
+    });
+
+    // Render markdown to HTML
+    const html = marked.parse(content);
+    contentEl.innerHTML = html;
+
+    // Scroll to top
+    contentEl.scrollTop = 0;
+}
+
+// Make loadDocument available globally
+window.loadDocument = loadDocument;
 
 // Start the app
 document.addEventListener('DOMContentLoaded', init);

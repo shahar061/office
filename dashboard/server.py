@@ -413,6 +413,60 @@ def api_state():
     return jsonify(load_state())
 
 
+@app.route('/api/documents')
+def api_documents():
+    """Return list of available plan documents."""
+    if not office_dir:
+        return jsonify({'error': 'No office directory'}), 404
+
+    # Document mapping
+    docs = [
+        {'id': 'vision', 'label': 'Vision Brief', 'file': '01-vision-brief.md'},
+        {'id': 'prd', 'label': 'PRD', 'file': '02-prd.md'},
+        {'id': 'market', 'label': 'Market Analysis', 'file': '03-market-analysis.md'},
+        {'id': 'system', 'label': 'System Design', 'file': '04-system-design.md'},
+        {'id': 'plan', 'label': 'Implementation Plan', 'file': 'plan.md'},
+    ]
+
+    # Check which files exist
+    available = []
+    for doc in docs:
+        doc_path = office_dir / doc['file']
+        if doc_path.exists():
+            available.append(doc)
+
+    return jsonify({'documents': available})
+
+
+@app.route('/api/documents/<doc_id>')
+def api_document(doc_id):
+    """Return content of a specific document."""
+    if not office_dir:
+        return jsonify({'error': 'No office directory'}), 404
+
+    # Document mapping
+    doc_files = {
+        'vision': '01-vision-brief.md',
+        'prd': '02-prd.md',
+        'market': '03-market-analysis.md',
+        'system': '04-system-design.md',
+        'plan': 'plan.md',
+    }
+
+    if doc_id not in doc_files:
+        return jsonify({'error': 'Document not found'}), 404
+
+    doc_path = office_dir / doc_files[doc_id]
+    if not doc_path.exists():
+        return jsonify({'error': 'Document file not found'}), 404
+
+    try:
+        content = doc_path.read_text()
+        return jsonify({'id': doc_id, 'content': content})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/health')
 def health():
     """Health check endpoint."""

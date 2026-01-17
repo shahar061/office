@@ -1,111 +1,185 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Office Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
-<body class="bg-gray-900 text-gray-100 min-h-screen">
-    <!-- Header -->
-    <header class="bg-gray-800 border-b border-gray-700 px-6 py-4">
-        <div class="flex items-center justify-between">
-            <div class="flex items-center gap-6">
-                <h1 class="text-xl font-semibold">Office Dashboard</h1>
+<body class="h-full bg-gray-900 text-gray-100">
+    <div class="flex h-full">
 
-                <!-- View Toggle -->
-                <div class="flex bg-gray-700 rounded-lg p-1">
-                    <button id="btn-phase-view" class="view-toggle active px-4 py-1.5 rounded-md text-sm font-medium transition-colors">
-                        By Phase
-                    </button>
-                    <button id="btn-feature-view" class="view-toggle px-4 py-1.5 rounded-md text-sm font-medium transition-colors">
-                        By Feature
-                    </button>
-                    <button id="btn-agent-view" class="view-toggle px-4 py-1.5 rounded-md text-sm font-medium transition-colors">
-                        By Agent
-                    </button>
+        <!-- Sidebar -->
+        <aside id="sidebar" class="fixed left-0 top-0 h-screen w-52 bg-gray-800 border-r border-gray-700 flex flex-col z-20">
+            <!-- Logo/Brand -->
+            <div class="h-16 flex items-center px-4 border-b border-gray-700">
+                <svg class="w-6 h-6 text-blue-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                </svg>
+                <span class="text-lg font-semibold text-gray-100">Office</span>
+            </div>
+
+            <!-- Navigation -->
+            <nav id="main-nav" class="flex-1 py-4">
+                <!-- Navigation items rendered by JS -->
+            </nav>
+
+            <!-- Bottom section -->
+            <div class="border-t border-gray-700 p-4">
+                <div id="sidebar-connection" class="flex items-center gap-2">
+                    <span id="sidebar-status-indicator" class="w-2 h-2 rounded-full bg-yellow-500"></span>
+                    <span id="sidebar-status-text" class="text-xs text-gray-500">Connecting...</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 ml-52 flex flex-col h-screen">
+
+            <!-- ==================== DASHBOARD VIEW ==================== -->
+            <div id="dashboard-view" class="flex-1 flex flex-col overflow-hidden">
+                <!-- Header -->
+                <header class="bg-gray-800 border-b border-gray-700 px-6 py-4 shrink-0">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-6">
+                            <h1 class="text-xl font-semibold">Build Progress</h1>
+
+                            <!-- View Toggle -->
+                            <div class="flex bg-gray-700 rounded-lg p-1">
+                                <button id="btn-phase-view" class="view-toggle active px-4 py-1.5 rounded-md text-sm font-medium transition-colors">
+                                    By Phase
+                                </button>
+                                <button id="btn-feature-view" class="view-toggle px-4 py-1.5 rounded-md text-sm font-medium transition-colors">
+                                    By Feature
+                                </button>
+                                <button id="btn-agent-view" class="view-toggle px-4 py-1.5 rounded-md text-sm font-medium transition-colors">
+                                    By Agent
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-6">
+                            <!-- Progress -->
+                            <div id="progress" class="text-sm text-gray-400">
+                                <span id="progress-text">Loading...</span>
+                            </div>
+
+                            <!-- Build Time -->
+                            <div id="build-time" class="text-sm text-gray-400">
+                                <span id="elapsed-time"></span>
+                            </div>
+
+                            <!-- Connection Status -->
+                            <div id="connection-status" class="flex items-center gap-2">
+                                <span id="status-indicator" class="w-2 h-2 rounded-full bg-yellow-500"></span>
+                                <span id="status-text" class="text-sm">Connecting...</span>
+                            </div>
+                        </div>
+                    </div>
+                </header>
+
+                <!-- Build Info Bar -->
+                <div id="build-info" class="bg-gray-800/50 border-b border-gray-700 px-6 py-3 hidden shrink-0">
+                    <div class="flex items-center justify-between">
+                        <span id="build-session" class="text-sm text-gray-400">Build: --</span>
+                        <div class="flex items-center gap-4">
+                            <div class="flex-1 bg-gray-700 rounded-full h-2 w-48">
+                                <div id="build-progress-bar" class="bg-blue-500 h-2 rounded-full transition-all" style="width: 0%"></div>
+                            </div>
+                            <span id="build-progress-pct" class="text-sm text-gray-400">0%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dashboard Content -->
+                <div class="flex-1 overflow-y-auto p-6">
+                    <!-- Empty State -->
+                    <div id="empty-state" class="hidden flex flex-col items-center justify-center py-20 text-gray-500">
+                        <svg class="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                        </svg>
+                        <p class="text-lg">No active build</p>
+                        <p class="text-sm mt-2">Run /build to start</p>
+                    </div>
+
+                    <!-- Phase View -->
+                    <div id="phase-view" class="space-y-6">
+                        <!-- Phase Cards -->
+                        <div id="phase-cards" class="flex flex-wrap gap-4">
+                            <!-- Phase cards rendered here by JS -->
+                        </div>
+
+                        <!-- Expanded Phase (drill-down) -->
+                        <div id="expanded-phase" class="hidden">
+                            <!-- Expanded phase content rendered here by JS -->
+                        </div>
+
+                        <!-- Activity Feed -->
+                        <div id="activity-section" class="mt-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <h2 class="text-sm font-medium text-gray-400 uppercase tracking-wider">Activity</h2>
+                                <span class="text-xs text-green-400">Live</span>
+                            </div>
+                            <div id="activity-feed" class="bg-gray-800/50 rounded-lg p-4 max-h-64 overflow-y-auto">
+                                <!-- Activity items rendered here by JS -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Feature View -->
+                    <div id="feature-view" class="hidden space-y-6">
+                        <!-- Features rendered here by JS -->
+                    </div>
+
+                    <!-- Agent View -->
+                    <div id="agent-view" class="hidden grid grid-cols-6 gap-4">
+                        <!-- Agent columns rendered here by JS -->
+                    </div>
                 </div>
             </div>
 
-            <div class="flex items-center gap-6">
-                <!-- Progress -->
-                <div id="progress" class="text-sm text-gray-400">
-                    <span id="progress-text">Loading...</span>
+            <!-- ==================== PLAN VIEW ==================== -->
+            <div id="plan-view" class="flex-1 hidden overflow-y-auto">
+                <!-- Sticky Header Container -->
+                <div class="sticky top-0 z-10">
+                    <!-- Plan Header -->
+                    <header class="bg-gray-800 border-b border-gray-700 px-6 py-4">
+                        <div class="flex items-center justify-between">
+                            <h1 class="text-xl font-semibold">Project Plan</h1>
+                            <div class="text-sm text-gray-400">
+                                <span id="plan-doc-count">0</span> documents
+                            </div>
+                        </div>
+                    </header>
+
+                    <!-- Document Tabs -->
+                    <div class="border-b border-gray-700 bg-gray-800/95 backdrop-blur-sm">
+                        <div class="flex gap-1 px-4" id="doc-tabs">
+                            <!-- Tabs rendered by JS -->
+                        </div>
+                    </div>
                 </div>
 
-                <!-- Build Time -->
-                <div id="build-time" class="text-sm text-gray-400">
-                    <span id="elapsed-time"></span>
-                </div>
-
-                <!-- Connection Status -->
-                <div id="connection-status" class="flex items-center gap-2">
-                    <span id="status-indicator" class="w-2 h-2 rounded-full bg-yellow-500"></span>
-                    <span id="status-text" class="text-sm">Connecting...</span>
+                <!-- Document Content -->
+                <div class="bg-gray-900">
+                    <article id="document-content" class="prose max-w-4xl mx-auto px-8 py-8">
+                        <!-- Markdown content rendered here -->
+                        <div class="flex items-center justify-center py-20 text-gray-500">
+                            <div class="text-center">
+                                <svg class="w-12 h-12 mx-auto mb-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                                </svg>
+                                <p>Loading document...</p>
+                            </div>
+                        </div>
+                    </article>
                 </div>
             </div>
-        </div>
-    </header>
 
-    <!-- Build Info Bar -->
-    <div id="build-info" class="bg-gray-800/50 border-b border-gray-700 px-6 py-3 hidden">
-        <div class="flex items-center justify-between">
-            <span id="build-session" class="text-sm text-gray-400">Build: --</span>
-            <div class="flex items-center gap-4">
-                <div class="flex-1 bg-gray-700 rounded-full h-2 w-48">
-                    <div id="build-progress-bar" class="bg-blue-500 h-2 rounded-full transition-all" style="width: 0%"></div>
-                </div>
-                <span id="build-progress-pct" class="text-sm text-gray-400">0%</span>
-            </div>
-        </div>
+        </main>
     </div>
-
-    <!-- Main Content -->
-    <main class="p-6">
-        <!-- Empty State -->
-        <div id="empty-state" class="hidden flex flex-col items-center justify-center py-20 text-gray-500">
-            <svg class="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-            </svg>
-            <p class="text-lg">No active build</p>
-            <p class="text-sm mt-2">Run /build to start</p>
-        </div>
-
-        <!-- Phase View -->
-        <div id="phase-view" class="space-y-6">
-            <!-- Phase Cards -->
-            <div id="phase-cards" class="flex flex-wrap gap-4">
-                <!-- Phase cards rendered here by JS -->
-            </div>
-
-            <!-- Expanded Phase (drill-down) -->
-            <div id="expanded-phase" class="hidden">
-                <!-- Expanded phase content rendered here by JS -->
-            </div>
-
-            <!-- Activity Feed -->
-            <div id="activity-section" class="mt-6">
-                <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-sm font-medium text-gray-400 uppercase tracking-wider">Activity</h2>
-                    <span class="text-xs text-green-400">Live</span>
-                </div>
-                <div id="activity-feed" class="bg-gray-800/50 rounded-lg p-4 max-h-64 overflow-y-auto">
-                    <!-- Activity items rendered here by JS -->
-                </div>
-            </div>
-        </div>
-
-        <!-- Feature View -->
-        <div id="feature-view" class="hidden space-y-6">
-            <!-- Features rendered here by JS -->
-        </div>
-
-        <!-- Agent View -->
-        <div id="agent-view" class="hidden grid grid-cols-6 gap-4">
-            <!-- Agent columns rendered here by JS -->
-        </div>
-    </main>
 
     <!-- Reconnecting Overlay -->
     <div id="reconnect-overlay" class="hidden fixed inset-0 bg-gray-900/80 flex items-center justify-center z-50">

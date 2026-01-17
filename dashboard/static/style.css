@@ -12,34 +12,280 @@
     color: white;
 }
 
-/* Task Cards */
+/* ============================================
+   TASK CARDS - Modern Glass Morphism Design
+   ============================================ */
+
 .task-card {
-    @apply bg-gray-800 rounded-lg p-4 border-l-4 transition-all;
+    position: relative;
+    background: rgba(31, 41, 55, 0.5);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(75, 85, 99, 0.5);
+    border-radius: 0.75rem;
+    padding: 1rem;
+    padding-left: 1.25rem;
+    transition: all 0.2s ease-out;
+    overflow: hidden;
 }
 
-.task-card.status-queued {
-    @apply border-gray-500;
+.task-card:hover {
+    background: rgba(31, 41, 55, 0.7);
+    border-color: rgba(107, 114, 128, 0.5);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2),
+                0 4px 6px -4px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
 }
 
-.task-card.status-assigned {
-    @apply border-blue-400;
+/* Status Strip (left edge) */
+.task-card::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    border-radius: 0.75rem 0 0 0.75rem;
+    background: #6b7280;
+    transition: background 0.2s ease;
 }
 
+.task-card.status-queued::before {
+    background: #6b7280;
+}
+
+.task-card.status-assigned::before,
+.task-card.status-in_progress::before {
+    background: #f59e0b;
+}
+
+.task-card.status-in_review::before {
+    background: #a855f7;
+}
+
+.task-card.status-done::before,
+.task-card.status-completed::before {
+    background: #10b981;
+}
+
+.task-card.status-failed::before {
+    background: #f43f5e;
+}
+
+/* Status-specific card border glow */
 .task-card.status-in_progress {
-    @apply border-yellow-400;
+    border-color: rgba(245, 158, 11, 0.3);
 }
 
-.task-card.status-in_review {
-    @apply border-purple-400;
-}
-
-.task-card.status-done,
-.task-card.status-completed {
-    @apply border-green-500;
+.task-card.status-in_progress:hover {
+    border-color: rgba(245, 158, 11, 0.5);
 }
 
 .task-card.status-failed {
-    @apply border-red-500;
+    border-color: rgba(244, 63, 94, 0.3);
+}
+
+.task-card.status-failed:hover {
+    border-color: rgba(244, 63, 94, 0.5);
+}
+
+/* Card Header */
+.task-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.task-card-title-group {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 0;
+    flex: 1;
+}
+
+/* Status Icon */
+.status-icon-wrapper {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.status-icon {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+}
+
+.status-icon.status-queued {
+    background: rgba(107, 114, 128, 0.2);
+}
+
+.status-icon.status-in_progress {
+    background: rgba(245, 158, 11, 0.2);
+}
+
+.status-icon.status-completed,
+.status-icon.status-done {
+    background: rgba(16, 185, 129, 0.2);
+}
+
+.status-icon.status-failed {
+    background: rgba(244, 63, 94, 0.2);
+}
+
+/* Pulse animation for in-progress */
+.status-pulse {
+    position: absolute;
+    inset: 0;
+    border-radius: 0.5rem;
+    background: rgba(245, 158, 11, 0.3);
+    animation: statusPulse 2s ease-in-out infinite;
+}
+
+@keyframes statusPulse {
+    0%, 100% {
+        opacity: 0.4;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0;
+        transform: scale(1.4);
+    }
+}
+
+/* Spinner animation */
+.status-spinner {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Title and ID */
+.task-card-title {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #f3f4f6;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.task-card-id {
+    font-size: 0.75rem;
+    color: #6b7280;
+    font-family: ui-monospace, monospace;
+}
+
+/* Agent Badge */
+.agent-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.25rem 0.625rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border: 1px solid;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.agent-badge-dot {
+    width: 0.375rem;
+    height: 0.375rem;
+    border-radius: 9999px;
+}
+
+/* Agent colors */
+.agent-badge.agent-backend-engineer {
+    background: rgba(99, 102, 241, 0.2);
+    color: #a5b4fc;
+    border-color: rgba(99, 102, 241, 0.3);
+}
+.agent-badge.agent-backend-engineer .agent-badge-dot {
+    background: #818cf8;
+}
+
+.agent-badge.agent-frontend-engineer {
+    background: rgba(139, 92, 246, 0.2);
+    color: #c4b5fd;
+    border-color: rgba(139, 92, 246, 0.3);
+}
+.agent-badge.agent-frontend-engineer .agent-badge-dot {
+    background: #a78bfa;
+}
+
+.agent-badge.agent-devops {
+    background: rgba(6, 182, 212, 0.2);
+    color: #67e8f9;
+    border-color: rgba(6, 182, 212, 0.3);
+}
+.agent-badge.agent-devops .agent-badge-dot {
+    background: #22d3ee;
+}
+
+.agent-badge.agent-automation-developer {
+    background: rgba(236, 72, 153, 0.2);
+    color: #f9a8d4;
+    border-color: rgba(236, 72, 153, 0.3);
+}
+.agent-badge.agent-automation-developer .agent-badge-dot {
+    background: #f472b6;
+}
+
+.agent-badge.agent-ui-ux-expert {
+    background: rgba(168, 85, 247, 0.2);
+    color: #d8b4fe;
+    border-color: rgba(168, 85, 247, 0.3);
+}
+.agent-badge.agent-ui-ux-expert .agent-badge-dot {
+    background: #c084fc;
+}
+
+.agent-badge.agent-data-engineer {
+    background: rgba(34, 197, 94, 0.2);
+    color: #86efac;
+    border-color: rgba(34, 197, 94, 0.3);
+}
+.agent-badge.agent-data-engineer .agent-badge-dot {
+    background: #4ade80;
+}
+
+/* Meta Row */
+.task-card-meta {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 0.75rem;
+    font-size: 0.75rem;
+    color: #9ca3af;
+}
+
+.task-card-meta-item {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+}
+
+.task-card-meta-item svg {
+    width: 0.875rem;
+    height: 0.875rem;
+    color: #6b7280;
+}
+
+/* Time warning colors */
+.time-warning {
+    color: #fbbf24;
+}
+
+.time-danger {
+    color: #f87171;
 }
 
 /* Stuck Animation */
@@ -56,194 +302,677 @@
     }
 }
 
-/* Feature Lane */
-.feature-lane {
-    @apply bg-gray-800/50 rounded-lg p-4;
-}
-
-.feature-lane-header {
-    @apply flex items-center justify-between mb-4 pb-3 border-b border-gray-700;
-}
-
-/* Status Columns */
-.status-column {
-    @apply flex-1 min-w-0;
-}
-
-.status-column-header {
-    @apply text-xs font-medium text-gray-500 uppercase tracking-wider mb-3 px-2;
-}
-
-/* Agent Column */
-.agent-column {
-    @apply bg-gray-800/50 rounded-lg p-4;
-}
-
-.agent-column-header {
-    @apply text-sm font-medium text-gray-300 mb-4 pb-2 border-b border-gray-700;
-}
-
-.agent-idle {
-    @apply text-gray-500 text-sm italic py-4 text-center;
-}
-
-/* Mini Card (for done tasks in agent view) */
-.task-card-mini {
-    @apply bg-gray-700/50 rounded px-3 py-2 text-sm;
-}
-
 /* Retry Badge */
 .retry-badge {
-    @apply text-xs px-2 py-0.5 rounded-full;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.75rem;
+    padding: 0.125rem 0.5rem;
+    border-radius: 9999px;
 }
 
 .retry-badge.warning {
-    @apply bg-yellow-500/20 text-yellow-400;
+    background: rgba(245, 158, 11, 0.2);
+    color: #fbbf24;
 }
 
 .retry-badge.danger {
-    @apply bg-red-500/20 text-red-400;
+    background: rgba(239, 68, 68, 0.2);
+    color: #f87171;
 }
 
 /* Review Warning Badge */
 .review-warning-badge {
-    @apply text-xs px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-400;
+    font-size: 0.75rem;
+    padding: 0.125rem 0.5rem;
+    border-radius: 9999px;
+    background: rgba(249, 115, 22, 0.2);
+    color: #fb923c;
 }
 
-/* Dependency Links */
+/* Dependencies */
+.task-card-deps {
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
+}
+
 .dep-link {
-    @apply text-xs text-gray-500;
+    color: #6b7280;
+    transition: color 0.15s;
 }
 
 .dep-link:hover {
-    @apply text-gray-300;
+    color: #d1d5db;
 }
 
-/* Scrollable areas */
-.tasks-scroll {
-    @apply flex gap-2 overflow-x-auto pb-2;
+.dep-blocked {
+    color: #f87171;
 }
 
-/* Tooltip */
-.tooltip {
-    @apply invisible opacity-0 absolute z-10 bg-gray-700 text-gray-200 text-xs rounded px-2 py-1 -top-8 left-1/2 -translate-x-1/2 transition-all whitespace-nowrap;
-}
-
-.has-tooltip:hover .tooltip {
-    @apply visible opacity-100;
+.dep-blocking {
+    color: #fbbf24;
 }
 
 /* Error expandable */
-.error-message {
-    @apply mt-2 text-xs text-red-400 bg-red-500/10 rounded p-2 hidden;
+.error-details {
+    margin-top: 0.75rem;
 }
 
-.error-message.expanded {
-    @apply block;
+.error-summary {
+    font-size: 0.75rem;
+    color: #f87171;
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.15s;
 }
 
-/* Phase Cards */
+.error-summary:hover {
+    color: #fca5a5;
+}
+
+.error-content {
+    margin-top: 0.5rem;
+    padding: 0.625rem;
+    border-radius: 0.5rem;
+    background: rgba(244, 63, 94, 0.1);
+    border: 1px solid rgba(244, 63, 94, 0.2);
+}
+
+.error-content code {
+    font-size: 0.75rem;
+    color: #fca5a5;
+    font-family: ui-monospace, monospace;
+    line-height: 1.5;
+}
+
+details[open] summary ~ * {
+    animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* State change animation */
+.task-card.state-changed {
+    animation: stateChange 0.3s ease-out;
+}
+
+@keyframes stateChange {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+    100% { transform: scale(1); }
+}
+
+/* ============================================
+   FEATURE LANE
+   ============================================ */
+
+.feature-lane {
+    background: rgba(31, 41, 55, 0.5);
+    border-radius: 0.75rem;
+    padding: 1rem;
+}
+
+.feature-lane-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid rgba(75, 85, 99, 0.5);
+}
+
+/* Status Columns */
+.status-column {
+    flex: 1;
+    min-width: 0;
+}
+
+.status-column-header {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.75rem;
+    padding: 0 0.5rem;
+}
+
+/* ============================================
+   AGENT COLUMN
+   ============================================ */
+
+.agent-column {
+    background: rgba(31, 41, 55, 0.5);
+    border-radius: 0.75rem;
+    padding: 1rem;
+}
+
+.agent-column-header {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #d1d5db;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(75, 85, 99, 0.5);
+}
+
+.agent-idle {
+    color: #6b7280;
+    font-size: 0.875rem;
+    font-style: italic;
+    padding: 1rem 0;
+    text-align: center;
+}
+
+/* Mini Card (for done tasks in agent view) */
+.task-card-mini {
+    background: rgba(55, 65, 81, 0.5);
+    border-radius: 0.375rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+}
+
+/* ============================================
+   PHASE CARDS
+   ============================================ */
+
 .phase-card {
-    @apply bg-gray-800 rounded-lg p-4 cursor-pointer transition-all min-w-[140px];
-    @apply border-2 border-transparent hover:border-gray-600;
+    background: rgba(31, 41, 55, 0.7);
+    border-radius: 0.75rem;
+    padding: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease-out;
+    min-width: 140px;
+    border: 2px solid transparent;
+}
+
+.phase-card:hover {
+    background: rgba(31, 41, 55, 0.9);
+    border-color: rgba(107, 114, 128, 0.5);
+    transform: translateY(-2px);
 }
 
 .phase-card.status-pending,
 .phase-card.status-blocked {
-    @apply opacity-60;
+    opacity: 0.6;
 }
 
 .phase-card.status-in_progress {
-    @apply border-yellow-400/50;
+    border-color: rgba(245, 158, 11, 0.5);
+    box-shadow: 0 0 20px rgba(245, 158, 11, 0.1);
 }
 
 .phase-card.status-completed {
-    @apply border-green-500/50;
+    border-color: rgba(16, 185, 129, 0.5);
 }
 
 .phase-card.status-failed {
-    @apply border-red-500/50;
+    border-color: rgba(244, 63, 94, 0.5);
 }
 
 .phase-card.expanded {
-    @apply ring-2 ring-blue-500;
+    ring: 2px;
+    ring-color: #3b82f6;
+    box-shadow: 0 0 0 2px #3b82f6;
 }
 
 /* Phase Status Icons */
 .phase-status-icon {
-    @apply text-2xl mb-2;
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
 }
 
 /* Phase Arrow */
 .phase-arrow {
-    @apply text-gray-500 text-xl self-center;
+    color: #6b7280;
+    font-size: 1.25rem;
+    align-self: center;
 }
 
-/* Expanded Phase Panel */
+/* ============================================
+   EXPANDED PHASE PANEL
+   ============================================ */
+
 .expanded-phase-panel {
-    @apply bg-gray-800/50 rounded-lg p-6;
+    background: rgba(31, 41, 55, 0.5);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
 }
 
 .expanded-phase-header {
-    @apply flex items-center justify-between mb-4 pb-4 border-b border-gray-700;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(75, 85, 99, 0.5);
 }
 
 .expanded-phase-tasks {
-    @apply grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+}
+
+@media (min-width: 640px) {
+    .expanded-phase-tasks {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (min-width: 768px) {
+    .expanded-phase-tasks {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+@media (min-width: 1024px) {
+    .expanded-phase-tasks {
+        grid-template-columns: repeat(6, 1fr);
+    }
 }
 
 /* Task Mini Card (for expanded phase) */
 .task-mini {
-    @apply bg-gray-700 rounded-lg p-3 text-center;
+    background: rgba(55, 65, 81, 0.7);
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.2s ease;
 }
 
-.task-mini.status-queued {
-    @apply border-l-4 border-gray-500;
+.task-mini:hover {
+    background: rgba(55, 65, 81, 0.9);
+    transform: translateY(-1px);
 }
 
-.task-mini.status-in_progress {
-    @apply border-l-4 border-yellow-400;
+.task-mini::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: #6b7280;
 }
 
-.task-mini.status-completed,
-.task-mini.status-done {
-    @apply border-l-4 border-green-500;
+.task-mini.status-queued::before {
+    background: #6b7280;
 }
 
-.task-mini.status-failed {
-    @apply border-l-4 border-red-500;
+.task-mini.status-in_progress::before {
+    background: #f59e0b;
 }
 
-/* Activity Feed */
+.task-mini.status-completed::before,
+.task-mini.status-done::before {
+    background: #10b981;
+}
+
+.task-mini.status-failed::before {
+    background: #f43f5e;
+}
+
+/* ============================================
+   ACTIVITY FEED
+   ============================================ */
+
 .activity-item {
-    @apply flex items-start gap-3 py-2 border-b border-gray-700/50 last:border-0;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid rgba(75, 85, 99, 0.3);
+}
+
+.activity-item:last-child {
+    border-bottom: none;
 }
 
 .activity-time {
-    @apply text-xs text-gray-500 font-mono w-16 flex-shrink-0;
+    font-size: 0.75rem;
+    color: #6b7280;
+    font-family: ui-monospace, monospace;
+    width: 4rem;
+    flex-shrink: 0;
 }
 
 .activity-event {
-    @apply text-sm text-gray-300 flex-1;
+    font-size: 0.875rem;
+    color: #d1d5db;
+    flex: 1;
 }
 
 .activity-phase {
-    @apply text-xs text-gray-500 px-2 py-0.5 bg-gray-700 rounded;
+    font-size: 0.75rem;
+    color: #6b7280;
+    padding: 0.125rem 0.5rem;
+    background: rgba(55, 65, 81, 0.7);
+    border-radius: 0.25rem;
 }
 
 /* Activity event types */
 .activity-item.phase-start .activity-event {
-    @apply text-blue-400;
+    color: #60a5fa;
 }
 
 .activity-item.phase-complete .activity-event {
-    @apply text-green-400;
+    color: #34d399;
 }
 
 .activity-item.task-done .activity-event {
-    @apply text-green-300;
+    color: #6ee7b7;
 }
 
 .activity-item.task-start .activity-event {
-    @apply text-yellow-300;
+    color: #fcd34d;
+}
+
+/* ============================================
+   SCROLLABLE AREAS
+   ============================================ */
+
+.tasks-scroll {
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+}
+
+/* ============================================
+   TOOLTIP
+   ============================================ */
+
+.tooltip {
+    visibility: hidden;
+    opacity: 0;
+    position: absolute;
+    z-index: 10;
+    background: #374151;
+    color: #e5e7eb;
+    font-size: 0.75rem;
+    border-radius: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    top: -2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+
+.has-tooltip:hover .tooltip {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* ============================================
+   LEGACY COMPAT (error-message)
+   ============================================ */
+
+.error-message {
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
+    color: #f87171;
+    background: rgba(239, 68, 68, 0.1);
+    border-radius: 0.5rem;
+    padding: 0.5rem;
+    display: none;
+}
+
+.error-message.expanded {
+    display: block;
+}
+
+/* ============================================
+   SIDEBAR NAVIGATION
+   ============================================ */
+
+.nav-item {
+    transition: all 0.15s ease;
+}
+
+.nav-item:hover {
+    background: rgba(55, 65, 81, 0.7);
+}
+
+/* ============================================
+   VIEW TRANSITIONS
+   ============================================ */
+
+#dashboard-view,
+#plan-view {
+    transition: opacity 0.15s ease-in-out;
+}
+
+/* ============================================
+   DOCUMENT TABS
+   ============================================ */
+
+.doc-tab {
+    transition: all 0.15s ease;
+}
+
+/* ============================================
+   PROSE STYLES - MARKDOWN RENDERING
+   ============================================ */
+
+.prose {
+    color: #e5e7eb;
+    line-height: 1.75;
+    font-size: 1rem;
+}
+
+.prose h1 {
+    font-size: 2.25rem;
+    font-weight: 700;
+    color: #f9fafb;
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid #374151;
+    line-height: 1.2;
+}
+
+.prose h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #f3f4f6;
+    margin-top: 2.5rem;
+    margin-bottom: 1rem;
+    line-height: 1.3;
+}
+
+.prose h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #d1d5db;
+    margin-top: 2rem;
+    margin-bottom: 0.75rem;
+    line-height: 1.4;
+}
+
+.prose h4 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #d1d5db;
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.prose p {
+    margin-bottom: 1.25rem;
+}
+
+.prose ul,
+.prose ol {
+    margin-left: 1.5rem;
+    margin-bottom: 1.25rem;
+    padding-left: 0.5rem;
+}
+
+.prose li {
+    margin-bottom: 0.5rem;
+}
+
+.prose ul li {
+    list-style-type: disc;
+}
+
+.prose ol li {
+    list-style-type: decimal;
+}
+
+.prose li > ul,
+.prose li > ol {
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.prose strong {
+    font-weight: 600;
+    color: #f3f4f6;
+}
+
+.prose em {
+    font-style: italic;
+}
+
+.prose code {
+    background-color: #1f2937;
+    padding: 0.125rem 0.375rem;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+    color: #93c5fd;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.prose pre {
+    background-color: #111827;
+    padding: 1rem 1.25rem;
+    border-radius: 0.5rem;
+    overflow-x: auto;
+    margin-bottom: 1.5rem;
+    border: 1px solid #374151;
+}
+
+.prose pre code {
+    background: none;
+    padding: 0;
+    font-size: 0.875rem;
+    color: #e5e7eb;
+    line-height: 1.6;
+}
+
+.prose blockquote {
+    border-left: 4px solid #3b82f6;
+    padding-left: 1rem;
+    margin-left: 0;
+    margin-right: 0;
+    color: #9ca3af;
+    font-style: italic;
+    margin-bottom: 1.25rem;
+}
+
+.prose blockquote p {
+    margin-bottom: 0;
+}
+
+.prose table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1.5rem;
+    font-size: 0.875rem;
+}
+
+.prose th,
+.prose td {
+    border: 1px solid #374151;
+    padding: 0.75rem 1rem;
+    text-align: left;
+}
+
+.prose th {
+    background-color: #1f2937;
+    font-weight: 600;
+    color: #f3f4f6;
+}
+
+.prose tr:nth-child(even) {
+    background-color: rgba(31, 41, 55, 0.3);
+}
+
+.prose a {
+    color: #60a5fa;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    transition: color 0.15s ease;
+}
+
+.prose a:hover {
+    color: #93c5fd;
+}
+
+.prose hr {
+    border: none;
+    border-top: 1px solid #374151;
+    margin: 2.5rem 0;
+}
+
+.prose img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 0.5rem;
+    margin: 1.5rem 0;
+}
+
+/* Task lists (checkboxes) */
+.prose input[type="checkbox"] {
+    margin-right: 0.5rem;
+    accent-color: #3b82f6;
+}
+
+.prose ul.contains-task-list {
+    list-style: none;
+    padding-left: 0;
+    margin-left: 0;
+}
+
+.prose .task-list-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+}
+
+/* ============================================
+   CUSTOM SCROLLBAR
+   ============================================ */
+
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #1f2937;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #4b5563;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #6b7280;
 }
