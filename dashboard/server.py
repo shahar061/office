@@ -139,8 +139,9 @@ def load_state():
     data = {
         'tasks': None,
         'phases_state': {},
-        'build_config': None,
-        'merged': []
+        'build_state': None,
+        'merged': [],
+        'activity': [],
     }
 
     # Load tasks.yaml for structure
@@ -156,7 +157,17 @@ def load_state():
     if config_file.exists():
         try:
             with open(config_file) as f:
-                data['build_config'] = yaml.safe_load(f)
+                config = yaml.safe_load(f)
+                # Wrap for frontend compatibility
+                data['build_state'] = {
+                    'build': {
+                        'session_id': config.get('session_id'),
+                        'started_at': config.get('started_at'),
+                        'status': 'in_progress',
+                    },
+                    'models': config.get('models'),
+                    'retry_limit': config.get('retry_limit'),
+                }
         except Exception as e:
             data['config_error'] = str(e)
 
