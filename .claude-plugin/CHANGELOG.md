@@ -2,6 +2,14 @@
 
 All notable changes to the Office plugin will be documented in this file.
 
+## [0.2.58] - 2026-01-16
+
+### Fixed
+
+- **Phase-execution no longer uses bash echo for logging**: Replaced with Read + Write tool pattern
+  - Eliminates permission prompts that block background agent execution
+  - Write tool doesn't require user approval
+
 ## [0.2.57] - 2026-01-16
 
 ### Fixed
