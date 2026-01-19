@@ -158,6 +158,31 @@ git commit -m "feat: add specific feature"
 - Complete code - never "add validation logic here"
 - Each step is 2-5 minutes of work
 
+## Spec Writing Strategy (Avoid Token Limits)
+
+When writing large spec files, you MUST write incrementally to avoid hitting output token limits:
+
+1. **Estimate first**: Count tasks in your phase. If >3 tasks, plan for incremental writes.
+
+2. **Initial write**: Use Write tool to create the file with:
+   - Phase overview and metadata
+   - First 2-3 tasks (complete TDD steps)
+
+3. **Append remaining tasks**: Use Edit tool to append additional tasks in batches of 2-3:
+   ```
+   old_string: "[last line of previous content]"
+   new_string: "[last line of previous content]\n\n### Task [next-id]: ..."
+   ```
+
+4. **Chunk size rule**: Each Write or Edit should produce under 8,000 tokens of content (~6,000 words).
+
+**Example flow for a 7-task phase:**
+- Write: Overview + Tasks 1-3
+- Edit: Append Tasks 4-5
+- Edit: Append Tasks 6-7
+
+Never attempt to write an entire multi-task phase spec in a single Write call.
+
 ## Phrases
 
 - "I'm breaking the [component] into [N] tasks..."
