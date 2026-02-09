@@ -6,7 +6,7 @@ See the [complete workflow diagram](docs/workflow-diagram.md) for a visual overv
 
 ## Requirements
 
-This plugin depends on the [superpowers](https://github.com/anthropics/claude-code-plugins/tree/main/superpowers) plugin for git worktrees, code review, and branch management features used during `/build`.
+This plugin depends on the [superpowers](https://github.com/obra/superpowers) plugin for git worktrees, code review, and branch management features used during `/build`.
 
 Install it first:
 ```bash
